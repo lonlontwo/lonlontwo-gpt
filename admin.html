@@ -13,22 +13,43 @@
         body {
             align-items: flex-start;
             background: #fff5f7;
-            display: block;
+            display: none;
+            /* 預設隱藏，驗證後才顯示 */
         }
     </style>
+    <script>
+        // --- 安全驗證 ---
+        (function () {
+            const PASS = "csmcsm46";
+            const sessionKey = "BUNNY_ADMIN_AUTH";
+
+            if (localStorage.getItem(sessionKey) !== "true") {
+                const input = prompt("請輸入管理員暗號：");
+                if (input === PASS) {
+                    localStorage.setItem(sessionKey, "true");
+                } else {
+                    alert("暗號錯誤！");
+                    window.location.href = "index.html";
+                }
+            }
+        })();
+    </script>
 </head>
 
-<body>
+<body id="admin-body">
+    <script>document.body.style.display = "block";</script>
 
     <div class="admin-container">
         <div class="admin-header">
             <h1>🐰 兔兔助理管理後台</h1>
             <p>在這裡調整您的 AI 助手設定</p>
+            <button onclick="localStorage.removeItem('BUNNY_ADMIN_AUTH'); location.reload();"
+                style="font-size: 0.7rem; background: none; border: 1px solid #ccc; cursor: pointer; padding: 2px 5px; border-radius: 4px; color: #888;">登出後台</button>
         </div>
 
         <div class="form-group">
             <label>API Key (Gemini)</label>
-            <input type="text" id="admin-api-key" placeholder="貼上您的 AIza... Key">
+            <input type="password" id="admin-api-key" placeholder="貼上您的 AIza... Key">
         </div>
 
         <div class="form-group">
