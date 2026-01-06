@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>兔兔助理 - 管理後台</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&family=Noto+Sans+TC:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            align-items: flex-start;
+            background: #fff5f7;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🐰 兔兔助理管理後台</h1>
+            <p>在這裡調整您的 AI 助手設定</p>
+        </div>
+
+        <div class="form-group">
+            <label>API Key (Gemini)</label>
+            <input type="text" id="admin-api-key" placeholder="貼上您的 AIza... Key">
+        </div>
+
+        <div class="form-group">
+            <label>助理顯示名稱</label>
+            <input type="text" id="admin-bot-name" placeholder="例如：兔兔助理">
+        </div>
+
+        <div class="form-group">
+            <label>助理個性設定 (System Prompt)</label>
+            <textarea id="admin-prompt" rows="5" placeholder="例如：你是一個可愛的兔子助理..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>快速選單內容 (以逗號隔開)</label>
+            <input type="text" id="admin-chips" placeholder="例如：兔兔是誰？,聯絡站長,我想買胡蘿蔔">
+        </div>
+
+        <div class="form-group">
+            <label>主題色 (HEX)</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="color" id="admin-color" style="width: 50px; height: 50px; padding: 0; border: none;">
+                <span id="color-hex">#ff8fb1</span>
+            </div>
+        </div>
+
+        <button class="save-btn" onclick="saveSettings()">💾 儲存並套用設定</button>
+        <p class="preview-notice">儲存後，您可以返回首頁重新整理查看效果。</p>
+
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="index.html" style="color: #ff8fb1; text-decoration: none;">← 回到聊天測試頁面</a>
+        </div>
+    </div>
+
+    <script>
+        // 載入目前設定
+        const defaultConfig = {
+            botName: "兔兔助理",
+            apiKey: "AIzaSyCdo6SXaNGx6WF1wTCLemU-7Juq5Ca3CmQ",
+            prompt: "你是一個網站助理，名叫「兔兔助理」。你的語氣非常可愛、親切，常帶有兔子相關的表情符號（如 🐰, 🥕, 🐾）。你負責協助使用者了解『兔兔網』的內容。",
+            chips: "兔兔網在哪裡？,助理能做什麼？,聯絡站長",
+            color: "#ff8fb1"
+        };
+
+        const config = JSON.parse(localStorage.getItem('BUNNY_CONFIG')) || defaultConfig;
+
+        document.getElementById('admin-api-key').value = config.apiKey;
+        document.getElementById('admin-bot-name').value = config.botName;
+        document.getElementById('admin-prompt').value = config.prompt;
+        document.getElementById('admin-chips').value = config.chips;
+        document.getElementById('admin-color').value = config.color;
+        document.getElementById('color-hex').innerText = config.color;
+
+        document.getElementById('admin-color').oninput = function () {
+            document.getElementById('color-hex').innerText = this.value;
+        };
+
+        function saveSettings() {
+            const newConfig = {
+                apiKey: document.getElementById('admin-api-key').value,
+                botName: document.getElementById('admin-bot-name').value,
+                prompt: document.getElementById('admin-prompt').value,
+                chips: document.getElementById('admin-chips').value,
+                color: document.getElementById('admin-color').value
+            };
+            localStorage.setItem('BUNNY_CONFIG', JSON.stringify(newConfig));
+            alert('設定已儲存！🐰');
+        }
+    </script>
+</body>
+
+</html>

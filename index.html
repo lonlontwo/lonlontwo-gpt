@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>兔兔助理 - 您的專屬 AI 夥伴</title>
+    <!-- 引入 Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&family=Noto+Sans+TC:wght@400;700&display=swap"
+        rel="stylesheet">
+    <!-- 引入 Font Awesome 圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="welcome-message" style="text-align: center;">
+        <h1 style="color: #ff8fb1; font-size: 3rem; margin-bottom: 10px;">兔兔網</h1>
+        <p style="color: #888;">正在測試您的專屬兔兔助理... 請看右下角 🐰</p>
+    </div>
+
+    <!-- 兔兔懸浮按鈕 -->
+    <div id="bunny-launcher">
+        <img src="https://raw.githubusercontent.com/Polymer-Project/shop/master/images/placeholder.png" id="bunny-icon"
+            alt="兔兔助理">
+    </div>
+
+    <!-- 聊天視窗容器 -->
+    <div id="chat-container">
+        <!-- 標題欄 -->
+        <div class="chat-header">
+            <img src="https://raw.githubusercontent.com/Polymer-Project/shop/master/images/placeholder.png"
+                id="bunny-header-icon" alt="Avatar">
+            <div>
+                <h2>兔兔助理</h2>
+                <span style="font-size: 0.7rem; opacity: 0.8;">● 在線中</span>
+            </div>
+            <button id="close-chat"
+                style="margin-left: auto; background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 訊息區域 -->
+        <div id="chat-messages">
+            <div class="message bot-message">
+                您好呀！我是兔兔助理，很高興見到您！🐰<br>有什麼我可以幫您的嗎？
+            </div>
+        </div>
+
+        <!-- 輸入中指示器 -->
+        <div class="typing-indicator" id="typing-indicator">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <span style="font-size: 0.8rem; color: #aaa; margin-left: 5px;">兔兔正在思考...</span>
+        </div>
+
+        <!-- 快速回覆選單 -->
+        <div class="quick-replies" id="quick-replies">
+            <div class="chip">🥕 兔兔網在哪裡？</div>
+            <div class="chip">🐰 助理能做什麼？</div>
+            <div class="chip">✨ 聯絡站長</div>
+        </div>
+
+        <!-- 輸入區域 -->
+        <form class="chat-input-area" id="chat-form">
+            <input type="text" id="user-input" placeholder="請輸入訊息..." autocomplete="off">
+            <button type="submit" id="send-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // 將生成的圖片填入
+        const avatarUrl = "C:/Users/jackc/.gemini/antigravity/brain/f5177dc4-b2f2-4388-90db-272e2829c80e/bunny_assistant_avatar_1767713609787.png";
+        document.getElementById('bunny-icon').src = avatarUrl;
+        document.getElementById('bunny-header-icon').src = avatarUrl;
+    </script>
+</body>
+
+</html>
