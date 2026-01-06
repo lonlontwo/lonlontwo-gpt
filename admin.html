@@ -55,6 +55,17 @@
         </div>
 
         <button class="save-btn" onclick="saveSettings()">💾 儲存並套用設定</button>
+
+        <div style="margin-top: 30px; padding: 20px; background: #f0f0f0; border-radius: 10px;">
+            <h3 style="margin-bottom: 10px;">🔗 嵌入您的網站</h3>
+            <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">請將以下代碼複製並貼到您網站的 &lt;body&gt; 標籤結束前：</p>
+            <code id="embed-code"
+                style="display: block; background: #333; color: #fff; padding: 15px; border-radius: 5px; font-size: 0.8rem; word-break: break-all;">
+                &lt;script src="https://lonlontwo-gpt.pages.dev/bunny-launcher.js"&gt;&lt;/script&gt;
+            </code>
+            <button onclick="copyEmbed()" style="margin-top: 10px; padding: 5px 10px; cursor: pointer;">📋 複製代碼</button>
+        </div>
+
         <p class="preview-notice">儲存後，您可以返回首頁重新整理查看效果。</p>
 
         <div style="margin-top: 20px; text-align: center;">
@@ -95,6 +106,12 @@
             };
             localStorage.setItem('BUNNY_CONFIG', JSON.stringify(newConfig));
             alert('設定已儲存！🐰');
+        }
+
+        function copyEmbed() {
+            const code = document.getElementById('embed-code').innerText;
+            navigator.clipboard.writeText(code);
+            alert('代碼已復制到剪貼簿！');
         }
     </script>
 </body>
