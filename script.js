@@ -52,8 +52,12 @@ launcher.addEventListener('click', () => {
 });
 
 closeBtn.addEventListener('click', () => {
-    chatContainer.classList.remove('active');
-    launcher.style.display = 'flex';
+    // 嘗試關閉視窗，如果無法關閉則返回上一頁
+    window.close();
+    // 如果 window.close() 被瀏覽器阻擋，就返回上一頁
+    setTimeout(() => {
+        window.history.back();
+    }, 100);
 });
 
 // --- 4. 聊天邏輯 ---
