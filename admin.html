@@ -253,6 +253,18 @@
             </div>
         </div>
 
+        <!-- 知識庫設定 -->
+        <div class="card">
+            <h2>📚 知識庫連結</h2>
+            <div class="form-group">
+                <label>資料來源 URL（一行一個）</label>
+                <textarea id="knowledgeUrls" placeholder="https://example.com/data1.js
+https://example.com/data2.js
+https://example.com/buttons.js" style="min-height: 120px;"></textarea>
+                <div class="hint">貼上您的 JS 資料檔連結，兔兔會自動讀取並學習這些內容。當資料更新時，兔兔也會跟著更新！</div>
+            </div>
+        </div>
+
         <!-- 按鈕 -->
         <div class="button-group">
             <button class="btn" onclick="saveConfig()">💾 儲存設定</button>
@@ -280,7 +292,7 @@
         const db = getFirestore(app);
 
         // 載入設定
-        window.loadConfig = async function() {
+        window.loadConfig = async function () {
             try {
                 const snap = await getDoc(doc(db, "configs", "bunny-assistant"));
                 if (snap.exists()) {
@@ -291,6 +303,7 @@
                     document.getElementById('chips').value = data.chips || '';
                     document.getElementById('color').value = data.color || '#ff8fb1';
                     document.getElementById('colorValue').textContent = data.color || '#ff8fb1';
+                    document.getElementById('knowledgeUrls').value = data.knowledgeUrls || '';
                     showStatus('✅ 設定載入成功！', 'success');
                 } else {
                     showStatus('ℹ️ 尚無儲存的設定，請填寫後儲存。', 'success');
@@ -301,13 +314,14 @@
         };
 
         // 儲存設定
-        window.saveConfig = async function() {
+        window.saveConfig = async function () {
             const config = {
                 groqApiKey: document.getElementById('groqApiKey').value.trim(),
                 botName: document.getElementById('botName').value.trim() || '兔兔助理',
                 prompt: document.getElementById('prompt').value.trim(),
                 chips: document.getElementById('chips').value.trim(),
                 color: document.getElementById('color').value,
+                knowledgeUrls: document.getElementById('knowledgeUrls').value.trim(),
                 updatedAt: new Date().toISOString()
             };
 
@@ -337,7 +351,7 @@
         });
 
         // 切換密碼顯示
-        window.toggleKeyVisibility = function() {
+        window.toggleKeyVisibility = function () {
             const input = document.getElementById('groqApiKey');
             input.type = input.type === 'password' ? 'text' : 'password';
         };

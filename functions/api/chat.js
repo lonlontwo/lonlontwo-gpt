@@ -7,23 +7,32 @@ export async function onRequestPost(context) {
     };
 
     try {
-        // 1. 先嘗試從 Firebase 讀取 API Key
+        // 1. 從 Firebase 讀取設定
         let GROQ_API_KEY = null;
+        let knowledgeUrls = "";
+        let systemPrompt = "";
 
         try {
             const firebaseUrl = "https://firestore.googleapis.com/v1/projects/green-tract-416604/databases/(default)/documents/configs/bunny-assistant";
             const firebaseResp = await fetch(firebaseUrl);
             const firebaseData = await firebaseResp.json();
 
-            if (firebaseData.fields && firebaseData.fields.groqApiKey) {
-                GROQ_API_KEY = firebaseData.fields.groqApiKey.stringValue;
-                console.log("Using API Key from Firebase");
+            if (firebaseData.fields) {
+                if (firebaseData.fields.groqApiKey) {
+                    GROQ_API_KEY = firebaseData.fields.groqApiKey.stringValue;
+                }
+                if (firebaseData.fields.knowledgeUrls) {
+                    knowledgeUrls = firebaseData.fields.knowledgeUrls.stringValue;
+                }
+                if (firebaseData.fields.prompt) {
+                    systemPrompt = firebaseData.fields.prompt.stringValue;
+                }
             }
         } catch (e) {
-            console.log("Firebase fetch failed, using env variable:", e.message);
+            console.log("Firebase fetch failed:", e.message);
         }
 
-        // 2. 如果 Firebase 沒有，就用環境變數
+        // 2. 如果 Firebase 沒有 API Key，就用環境變數
         if (!GROQ_API_KEY) {
             GROQ_API_KEY = context.env.GROQ_API_KEY;
         }
@@ -38,9 +47,46 @@ export async function onRequestPost(context) {
             });
         }
 
+        // 4. 抓取知識庫內容
+        let knowledgeContent = "";
+        if (knowledgeUrls) {
+            const urls = knowledgeUrls.split('\n').map(u => u.trim()).filter(u => u);
+            const fetchPromises = urls.map(async (url) => {
+                try {
+                    const resp = await fetch(url);
+                    if (resp.ok) {
+                        const text = await resp.text();
+                        // 限制每個檔案的大小，避免超過 token 限制
+                        return text.slice(0, 5000);
+                    }
+                } catch (e) {
+                    console.log(`Failed to fetch ${url}:`, e.message);
+                }
+                return "";
+            });
+
+            const contents = await Promise.all(fetchPromises);
+            knowledgeContent = contents.filter(c => c).join('\n\n---\n\n');
+        }
+
+        // 5. 建立增強的系統提示詞
+        let enhancedPrompt = systemPrompt || "你是一個友善的網站助理。";
+
+        if (knowledgeContent) {
+            enhancedPrompt += `\n\n以下是網站的資料，請根據這些資料來回答用戶的問題：\n\n${knowledgeContent}`;
+        }
+
         const requestBody = await context.request.json();
 
-        // 呼叫 Groq API
+        // 6. 替換系統提示詞
+        let messages = requestBody.messages || [];
+        if (messages.length > 0 && messages[0].role === "system") {
+            messages[0].content = enhancedPrompt;
+        } else {
+            messages = [{ role: "system", content: enhancedPrompt }, ...messages];
+        }
+
+        // 7. 呼叫 Groq API
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -49,7 +95,7 @@ export async function onRequestPost(context) {
             },
             body: JSON.stringify({
                 model: requestBody.model || "llama-3.3-70b-versatile",
-                messages: requestBody.messages,
+                messages: messages,
                 temperature: requestBody.temperature || 0.7,
                 max_tokens: requestBody.max_tokens || 1024
             })
