@@ -16,7 +16,7 @@
     // 預設設定
     let CONFIG = {
         botName: "兔兔助理",
-        apiKey: "AIzaSyCdo6SXaNGx6WF1wTCLemU-7Juq5Ca3CmQ", // 這裡填入您正確的 Gemini Key
+        apiKey: "AIzaSyC9dFeJfq8gQ3yyYcaoxbEJfsHNNS0wH-c", // 新的 Gemini Key
         apiEndpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
         prompt: "你是一個網站助理，名叫「兔兔助理」。你的語氣非常可愛、親切，常帶有兔子相關的表情符號（如 🐰, 🥕, 🐾）。",
         chips: "兔兔是誰？,功能介紹,聯絡站長",
