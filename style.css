@@ -54,13 +54,12 @@ body {
     object-fit: contain;
 }
 
-/* 聊天視窗 */
+/* 聊天視窗 - 置中顯示 */
 #chat-container {
-    position: fixed;
-    bottom: 110px;
-    right: 30px;
-    width: 380px;
-    height: 600px;
+    position: relative;
+    width: 420px;
+    height: 650px;
+    max-height: 90vh;
     background: var(--glass-bg);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
@@ -70,17 +69,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transform: translateY(20px) scale(0.9);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.4s ease;
     z-index: 1000;
-}
-
-#chat-container.active {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-    visibility: visible;
 }
 
 /* 標題欄 */
