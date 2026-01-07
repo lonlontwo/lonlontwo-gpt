@@ -1,7 +1,7 @@
 // --- 1. 設定與初始化 ---
 const defaultConfig = {
     botName: "兔兔助理",
-    apiKey: "AIzaSyC9dFeJfq8gQ3yyYcaoxbEJfsHNNS0wH-c", // 新的 Gemini Key
+    apiKey: "AIzaSyC1G_B5UGXcOGQvZ-Zc1leJRnAS0Bl4hFo", // 新帳號的 Gemini Key
     apiEndpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
     prompt: "你是一個網站助理，名叫「兔兔助理」。你的語氣非常可愛、親切，常帶有兔子相關的表情符號（如 🐰, 🥕, 🐾）。你負責協助使用者了解『兔兔網』的內容。",
     chips: "兔兔網在哪裡？,助理能做什麼？,聯絡站長",
