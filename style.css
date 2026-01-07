@@ -59,6 +59,7 @@ body {
     position: relative;
     width: 420px;
     height: 650px;
+    max-width: 95vw;
     max-height: 90vh;
     background: var(--glass-bg);
     backdrop-filter: blur(15px);
@@ -70,6 +71,58 @@ body {
     flex-direction: column;
     overflow: hidden;
     z-index: 1000;
+}
+
+/* 手機版 RWD */
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+        align-items: flex-start;
+    }
+
+    #chat-container {
+        width: 100%;
+        height: calc(100vh - 20px);
+        max-height: none;
+        border-radius: 16px;
+        margin: 0;
+    }
+
+    .chat-header {
+        padding: 15px;
+    }
+
+    .chat-header h2 {
+        font-size: 1rem;
+    }
+
+    #chat-messages {
+        padding: 15px;
+    }
+
+    .message {
+        font-size: 0.9rem;
+        padding: 10px 14px;
+    }
+
+    .chat-input-area {
+        padding: 12px;
+    }
+
+    #user-input {
+        padding: 10px 14px;
+        font-size: 16px;
+        /* 防止 iOS 自動縮放 */
+    }
+
+    .quick-replies {
+        padding: 8px 12px;
+    }
+
+    .chip {
+        font-size: 0.75rem;
+        padding: 5px 10px;
+    }
 }
 
 /* 標題欄 */
