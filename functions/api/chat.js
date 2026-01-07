@@ -89,9 +89,10 @@ export async function onRequestPost(context) {
         // 7. 呼叫 Groq API (含 Fallback 機制)
         const primaryModel = requestBody.model || "llama-3.3-70b-versatile";
         const fallbackModels = [
-            "llama-3.1-8b-instant",      // 8B 快速模型，限制較寬鬆
+            "llama-3.1-8b-instant",      // 8B 快速模型
             "mixtral-8x7b-32768",        // Mixtral MoE 模型
-            "gemma2-9b-it"               // Google Gemma2 9B
+            "gemma2-9b-it",              // Google Gemma2 9B
+            "llama3-8b-8192"             // Llama3 8B (舊版穩定)
         ];
 
         const modelsToTry = [primaryModel, ...fallbackModels];
@@ -110,21 +111,36 @@ export async function onRequestPost(context) {
                         model: model,
                         messages: messages,
                         temperature: requestBody.temperature || 0.7,
-                        max_tokens: requestBody.max_tokens || 1024
+                        max_tokens: requestBody.max_tokens || 512  // 減少 token 用量
                     })
                 });
 
                 data = await response.json();
 
-                // 如果成功或非速率限制錯誤，跳出迴圈
-                if (response.ok || response.status !== 429) {
+                // 檢查是否為速率限制錯誤 (HTTP 429 或 body 中的 rate limit 訊息)
+                const isRateLimited = response.status === 429 ||
+                    (data.error && data.error.message &&
+                        (data.error.message.includes('Rate limit') ||
+                            data.error.message.includes('rate_limit') ||
+                            data.error.message.includes('TPM') ||
+                            data.error.message.includes('RPM')));
+
+                // 如果成功且有回覆，跳出迴圈
+                if (response.ok && data.choices && data.choices.length > 0) {
                     console.log(`✅ 使用模型: ${model}`);
                     break;
                 }
 
-                // 429 錯誤 = 速率限制，嘗試下一個模型
-                console.log(`⚠️ 模型 ${model} 被限速，嘗試備用模型...`);
-                lastError = data;
+                // 如果是速率限制，嘗試下一個模型
+                if (isRateLimited) {
+                    console.log(`⚠️ 模型 ${model} 被限速，嘗試備用模型...`);
+                    lastError = data;
+                    continue;
+                }
+
+                // 其他錯誤直接返回
+                console.log(`❌ 模型 ${model} 錯誤: ${data.error?.message}`);
+                break;
 
             } catch (e) {
                 console.log(`❌ 模型 ${model} 失敗: ${e.message}`);
