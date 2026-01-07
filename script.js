@@ -62,6 +62,7 @@ function applyConfig() {
 const launcher = document.getElementById('bunny-launcher');
 const chatContainer = document.getElementById('chat-container');
 const closeBtn = document.getElementById('close-chat');
+const maximizeBtn = document.getElementById('maximize-chat');
 const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
 const chatMessages = document.getElementById('chat-messages');
@@ -71,6 +72,21 @@ const typingIndicator = document.getElementById('typing-indicator');
 // 預設常態式打開
 chatContainer.classList.add('active');
 if (launcher) launcher.style.display = 'none';
+
+// 最大化按鈕
+if (maximizeBtn) {
+    maximizeBtn.addEventListener('click', () => {
+        const isMaximized = chatContainer.classList.toggle('maximized');
+        const icon = maximizeBtn.querySelector('i');
+        if (isMaximized) {
+            icon.className = 'fas fa-compress-alt';
+            maximizeBtn.title = "還原";
+        } else {
+            icon.className = 'fas fa-expand-alt';
+            maximizeBtn.title = "最大化";
+        }
+    });
+}
 
 if (closeBtn) {
     closeBtn.addEventListener('click', () => {

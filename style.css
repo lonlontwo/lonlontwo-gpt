@@ -60,7 +60,7 @@ body {
     width: 420px;
     height: 650px;
     max-width: 95vw;
-    max-height: 90vh;
+    max-height: 95vh;
     background: var(--glass-bg);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
@@ -71,6 +71,26 @@ body {
     flex-direction: column;
     overflow: hidden;
     z-index: 1000;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        border-radius 0.3s ease;
+
+    /* 允許手動調整大小 (僅限非最大化狀態) */
+    resize: both;
+    min-width: 320px;
+    min-height: 400px;
+}
+
+/* 最大化狀態 */
+#chat-container.maximized {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+    resize: none;
+    /* 最大化時禁止拉動 */
 }
 
 /* 手機版 RWD */
@@ -147,9 +167,14 @@ body {
     font-weight: 600;
 }
 
-/* 關閉按鈕 */
-.close-btn {
+/* 標題按鈕群組 */
+.header-actions {
     margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+.control-btn {
     background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
@@ -160,13 +185,17 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1rem;
-    transition: background 0.3s, transform 0.2s;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
 }
 
-.close-btn:hover {
+.control-btn:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: scale(1.1);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
 }
 
 /* 訊息區域 */
