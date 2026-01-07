@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐰 兔兔助理 - 後台管理</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #fff5f7 0%, #ffe6ea 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #ff6b8a;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #888;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(255, 107, 138, 0.1);
+        }
+
+        .card h2 {
+            color: #ff6b8a;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #ff6b8a;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff6b8a 0%, #ff8fb1 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 107, 138, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            box-shadow: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+
+        .color-preview {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .color-preview input[type="color"] {
+            width: 60px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .api-key-input {
+            position: relative;
+        }
+
+        .api-key-input input {
+            padding-right: 50px;
+        }
+
+        .toggle-visibility {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        .warning-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐰 兔兔助理後台管理</h1>
+            <p>在這裡管理您的 AI 助理設定</p>
+        </div>
+
+        <!-- API 設定 -->
+        <div class="card">
+            <h2>🔑 API 設定</h2>
+            <div class="warning-box">
+                <strong>⚠️ 重要提醒</strong>
+                Groq API Key 有效期限為一年，到期前請記得更換新的 Key。
+                <br>申請網址：<a href="https://console.groq.com/keys" target="_blank">https://console.groq.com/keys</a>
+            </div>
+            <div class="form-group">
+                <label>Groq API Key</label>
+                <div class="api-key-input">
+                    <input type="password" id="groqApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx">
+                    <button class="toggle-visibility" onclick="toggleKeyVisibility()">👁️</button>
+                </div>
+                <div class="hint">這個 Key 會安全地儲存在雲端，訪客看不到</div>
+            </div>
+        </div>
+
+        <!-- 基本設定 -->
+        <div class="card">
+            <h2>⚙️ 基本設定</h2>
+            <div class="form-group">
+                <label>助理名稱</label>
+                <input type="text" id="botName" placeholder="兔兔助理">
+            </div>
+            <div class="form-group">
+                <label>AI 指令 (Prompt)</label>
+                <textarea id="prompt" placeholder="告訴 AI 它的角色和行為..."></textarea>
+                <div class="hint">說明 AI 的身份、語氣、任務等</div>
+            </div>
+            <div class="form-group">
+                <label>快速按鈕（逗號分隔）</label>
+                <input type="text" id="chips" placeholder="功能介紹,聯絡站長,關於我們">
+            </div>
+            <div class="form-group">
+                <label>主題色</label>
+                <div class="color-preview">
+                    <input type="color" id="color" value="#ff8fb1">
+                    <span id="colorValue">#ff8fb1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 按鈕 -->
+        <div class="button-group">
+            <button class="btn" onclick="saveConfig()">💾 儲存設定</button>
+            <button class="btn btn-secondary" onclick="loadConfig()">🔄 重新載入</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTHEOqKPVA7Mj8qTUcd9pJ0YrvIgGkBCs",
+            authDomain: "green-tract-416604.firebaseapp.com",
+            projectId: "green-tract-416604",
+            storageBucket: "green-tract-416604.firebasestorage.app",
+            messagingSenderId: "1004090879489",
+            appId: "1:1004090879489:web:cef299869048b5ab391a00"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 載入設定
+        window.loadConfig = async function() {
+            try {
+                const snap = await getDoc(doc(db, "configs", "bunny-assistant"));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    document.getElementById('groqApiKey').value = data.groqApiKey || '';
+                    document.getElementById('botName').value = data.botName || '兔兔助理';
+                    document.getElementById('prompt').value = data.prompt || '';
+                    document.getElementById('chips').value = data.chips || '';
+                    document.getElementById('color').value = data.color || '#ff8fb1';
+                    document.getElementById('colorValue').textContent = data.color || '#ff8fb1';
+                    showStatus('✅ 設定載入成功！', 'success');
+                } else {
+                    showStatus('ℹ️ 尚無儲存的設定，請填寫後儲存。', 'success');
+                }
+            } catch (e) {
+                showStatus('❌ 載入失敗：' + e.message, 'error');
+            }
+        };
+
+        // 儲存設定
+        window.saveConfig = async function() {
+            const config = {
+                groqApiKey: document.getElementById('groqApiKey').value.trim(),
+                botName: document.getElementById('botName').value.trim() || '兔兔助理',
+                prompt: document.getElementById('prompt').value.trim(),
+                chips: document.getElementById('chips').value.trim(),
+                color: document.getElementById('color').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            if (!config.groqApiKey) {
+                showStatus('❌ 請填寫 Groq API Key！', 'error');
+                return;
+            }
+
+            try {
+                await setDoc(doc(db, "configs", "bunny-assistant"), config, { merge: true });
+                showStatus('✅ 設定儲存成功！變更將在幾秒內生效。', 'success');
+            } catch (e) {
+                showStatus('❌ 儲存失敗：' + e.message, 'error');
+            }
+        };
+
+        function showStatus(msg, type) {
+            const status = document.getElementById('status');
+            status.textContent = msg;
+            status.className = 'status ' + type;
+            setTimeout(() => { status.className = 'status'; }, 5000);
+        }
+
+        // 顏色即時預覽
+        document.getElementById('color').addEventListener('input', (e) => {
+            document.getElementById('colorValue').textContent = e.target.value;
+        });
+
+        // 切換密碼顯示
+        window.toggleKeyVisibility = function() {
+            const input = document.getElementById('groqApiKey');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        };
+
+        // 頁面載入時讀取設定
+        loadConfig();
+    </script>
+</body>
+
+</html>

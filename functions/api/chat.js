@@ -1,7 +1,4 @@
 export async function onRequestPost(context) {
-    // 從 Cloudflare 環境變數讀取 API Key
-    const GROQ_API_KEY = context.env.GROQ_API_KEY;
-
     // 允許 CORS
     const corsHeaders = {
         "Access-Control-Allow-Origin": "*",
@@ -10,6 +7,37 @@ export async function onRequestPost(context) {
     };
 
     try {
+        // 1. 先嘗試從 Firebase 讀取 API Key
+        let GROQ_API_KEY = null;
+
+        try {
+            const firebaseUrl = "https://firestore.googleapis.com/v1/projects/green-tract-416604/databases/(default)/documents/configs/bunny-assistant";
+            const firebaseResp = await fetch(firebaseUrl);
+            const firebaseData = await firebaseResp.json();
+
+            if (firebaseData.fields && firebaseData.fields.groqApiKey) {
+                GROQ_API_KEY = firebaseData.fields.groqApiKey.stringValue;
+                console.log("Using API Key from Firebase");
+            }
+        } catch (e) {
+            console.log("Firebase fetch failed, using env variable:", e.message);
+        }
+
+        // 2. 如果 Firebase 沒有，就用環境變數
+        if (!GROQ_API_KEY) {
+            GROQ_API_KEY = context.env.GROQ_API_KEY;
+        }
+
+        // 3. 如果都沒有，返回錯誤
+        if (!GROQ_API_KEY) {
+            return new Response(JSON.stringify({
+                error: { message: "API Key 未設定！請在兔兔後台設定 Groq API Key。" }
+            }), {
+                status: 500,
+                headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
+        }
+
         const requestBody = await context.request.json();
 
         // 呼叫 Groq API
