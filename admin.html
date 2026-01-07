@@ -524,13 +524,11 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
 
         // 關閉後台功能
         window.closeAdmin = function () {
-            if (confirm('確定要關閉後台並離開嗎？請確保您已儲存所有變更。')) {
-                window.close();
-                // 如果無法關閉視窗，則返回上一頁
-                setTimeout(() => {
-                    window.history.back();
-                }, 100);
-            }
+            window.close();
+            // 如果無法關閉視窗，則返回上一頁
+            setTimeout(() => {
+                window.history.back();
+            }, 100);
         };
 
         // 切換密碼顯示
