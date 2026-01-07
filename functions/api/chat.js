@@ -47,7 +47,7 @@ export async function onRequestPost(context) {
             });
         }
 
-        // 4. 抓取知識庫內容
+        // 4. 抓取知識庫內容 (大幅限制大小以避免 TPM 超限)
         let knowledgeContent = "";
         if (knowledgeUrls) {
             const urls = knowledgeUrls.split('\n').map(u => u.trim()).filter(u => u);
@@ -56,8 +56,8 @@ export async function onRequestPost(context) {
                     const resp = await fetch(url);
                     if (resp.ok) {
                         const text = await resp.text();
-                        // 限制每個檔案的大小，避免超過 token 限制
-                        return text.slice(0, 5000);
+                        // 每個檔案限制 1500 字元
+                        return text.slice(0, 1500);
                     }
                 } catch (e) {
                     console.log(`Failed to fetch ${url}:`, e.message);
@@ -67,6 +67,11 @@ export async function onRequestPost(context) {
 
             const contents = await Promise.all(fetchPromises);
             knowledgeContent = contents.filter(c => c).join('\n\n---\n\n');
+
+            // 總量限制 3000 字元
+            if (knowledgeContent.length > 3000) {
+                knowledgeContent = knowledgeContent.slice(0, 3000) + "\n...(內容已截斷)";
+            }
         }
 
         // 5. 建立增強的系統提示詞
@@ -74,6 +79,11 @@ export async function onRequestPost(context) {
 
         if (knowledgeContent) {
             enhancedPrompt += `\n\n以下是網站的資料，請根據這些資料來回答用戶的問題：\n\n${knowledgeContent}`;
+        }
+
+        // 限制總 prompt 長度
+        if (enhancedPrompt.length > 4000) {
+            enhancedPrompt = enhancedPrompt.slice(0, 4000) + "\n...(已截斷)";
         }
 
         const requestBody = await context.request.json();
