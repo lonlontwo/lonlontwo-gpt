@@ -207,6 +207,35 @@
                 padding: 15px;
             }
 
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+
+            .card-header h2 {
+                margin-bottom: 0;
+            }
+
+            .expiry-timer {
+                font-size: 0.9rem;
+                color: #666;
+                font-weight: 500;
+            }
+
+            .expiry-warning {
+                color: #c62828 !important;
+                font-weight: 700 !important;
+                animation: blinker 1.5s linear infinite;
+            }
+
+            @keyframes blinker {
+                50% {
+                    opacity: 0.5;
+                }
+            }
+
             .container {
                 padding: 0;
             }
@@ -274,7 +303,10 @@
 
         <!-- API 設定 -->
         <div class="card">
-            <h2>🔑 API 設定</h2>
+            <div class="card-header">
+                <h2>🔑 API 設定</h2>
+                <div id="expiryTimer" class="expiry-timer"></div>
+            </div>
             <div class="warning-box">
                 <strong>⚠️ 重要提醒</strong>
                 Groq API Key 有效期限為一年，到期前請記得更換新的 Key。
@@ -287,6 +319,11 @@
                     <button class="toggle-visibility" onclick="toggleKeyVisibility()">👁️</button>
                 </div>
                 <div class="hint">這個 Key 會安全地儲存在雲端，訪客看不到</div>
+            </div>
+            <div class="form-group">
+                <label>API Key 到期日期</label>
+                <input type="date" id="keyExpiryDate">
+                <div class="hint">設定後，右上角會顯示倒數計時。目前的 Key 預計 2026-12-31 到期。</div>
             </div>
         </div>
 
@@ -376,7 +413,9 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
                     document.getElementById('colorValue').textContent = data.color || '#ff8fb1';
                     document.getElementById('knowledgeUrls').value = data.knowledgeUrls || '';
                     document.getElementById('avatarUrl').value = data.avatarUrl || '';
+                    document.getElementById('keyExpiryDate').value = data.keyExpiryDate || '';
                     updateAvatarPreview(data.avatarUrl);
+                    updateExpiryTimer(data.keyExpiryDate);
                     showStatus('✅ 設定載入成功！', 'success');
                 } else {
                     showStatus('ℹ️ 尚無儲存的設定，請填寫後儲存。', 'success');
@@ -396,6 +435,7 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
                 color: document.getElementById('color').value,
                 knowledgeUrls: document.getElementById('knowledgeUrls').value.trim(),
                 avatarUrl: document.getElementById('avatarUrl').value.trim(),
+                keyExpiryDate: document.getElementById('keyExpiryDate').value,
                 updatedAt: new Date().toISOString()
             };
 
@@ -438,6 +478,36 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
 
         document.getElementById('avatarUrl').addEventListener('input', (e) => {
             updateAvatarPreview(e.target.value);
+        });
+
+        // 倒數計時功能
+        function updateExpiryTimer(dateStr) {
+            const timerEl = document.getElementById('expiryTimer');
+            if (!dateStr) {
+                timerEl.textContent = '';
+                return;
+            }
+
+            const expiryDate = new Date(dateStr);
+            const now = new Date();
+            const diffTime = expiryDate - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                timerEl.textContent = '❌ 已過期';
+                timerEl.className = 'expiry-timer expiry-warning';
+            } else {
+                timerEl.textContent = `⏳ 剩餘 ${diffDays} 天`;
+                if (diffDays <= 10) {
+                    timerEl.className = 'expiry-timer expiry-warning';
+                } else {
+                    timerEl.className = 'expiry-timer';
+                }
+            }
+        }
+
+        document.getElementById('keyExpiryDate').addEventListener('change', (e) => {
+            updateExpiryTimer(e.target.value);
         });
 
         // 切換密碼顯示
