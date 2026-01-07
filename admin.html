@@ -129,6 +129,17 @@
             box-shadow: none;
         }
 
+        .btn-danger {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .btn-danger:hover {
+            background: #ffcdd2;
+            box-shadow: 0 5px 15px rgba(198, 40, 40, 0.2);
+        }
+
         .button-group {
             display: flex;
             gap: 10px;
@@ -377,6 +388,7 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
         <div class="button-group">
             <button class="btn" onclick="saveConfig()">💾 儲存設定</button>
             <button class="btn btn-secondary" onclick="loadConfig()">🔄 重新載入</button>
+            <button class="btn btn-danger" onclick="closeAdmin()">🚪 關閉後台</button>
         </div>
 
         <div id="status" class="status"></div>
@@ -509,6 +521,17 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
         document.getElementById('keyExpiryDate').addEventListener('change', (e) => {
             updateExpiryTimer(e.target.value);
         });
+
+        // 關閉後台功能
+        window.closeAdmin = function () {
+            if (confirm('確定要關閉後台並離開嗎？請確保您已儲存所有變更。')) {
+                window.close();
+                // 如果無法關閉視窗，則返回上一頁
+                setTimeout(() => {
+                    window.history.back();
+                }, 100);
+            }
+        };
 
         // 切換密碼顯示
         window.toggleKeyVisibility = function () {
