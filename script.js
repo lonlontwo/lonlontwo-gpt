@@ -1,18 +1,63 @@
 // --- 1. 設定與初始化 ---
 const defaultConfig = {
     botName: "兔兔助理",
-    apiEndpoint: "/api/chat", // 使用我們自己的代理 API
+    apiEndpoint: "/api/chat",
     model: "llama-3.3-70b-versatile",
     prompt: "你是一個網站助理，名叫「兔兔助理」。你的語氣非常可愛、親切，常帶有兔子相關的表情符號（如 🐰, 🥕, 🐾）。你負責協助使用者了解『兔兔網』的內容。",
     chips: "兔兔網在哪裡？,助理能做什麼？,聯絡站長",
-    color: "#ff8fb1"
+    color: "#ff8fb1",
+    avatarUrl: "https://raw.githubusercontent.com/lonlontwo/lonlontwo-gpt/main/bunny-avatar.png"
 };
 
-// 從 localStorage 讀取設定，如果沒有就用預設的
-const CONFIG = JSON.parse(localStorage.getItem('BUNNY_CONFIG')) || defaultConfig;
+let CONFIG = { ...defaultConfig };
 
-// 套用主題色
-document.documentElement.style.setProperty('--primary-color', CONFIG.color);
+// 抓取雲端設定 (Firebase Firestore REST API)
+async function syncConfig() {
+    try {
+        const firebaseUrl = "https://firestore.googleapis.com/v1/projects/green-tract-416604/databases/(default)/documents/configs/bunny-assistant";
+        const resp = await fetch(firebaseUrl);
+        const data = await resp.json();
+
+        if (data.fields) {
+            if (data.fields.botName) CONFIG.botName = data.fields.botName.stringValue;
+            if (data.fields.chips) CONFIG.chips = data.fields.chips.stringValue;
+            if (data.fields.color) CONFIG.color = data.fields.color.stringValue;
+            if (data.fields.avatarUrl) CONFIG.avatarUrl = data.fields.avatarUrl.stringValue;
+
+            // 更新介面
+            applyConfig();
+        }
+    } catch (e) {
+        console.log("Using default config:", e.message);
+        applyConfig();
+    }
+}
+
+function applyConfig() {
+    // 套用主題色
+    document.documentElement.style.setProperty('--primary-color', CONFIG.color);
+
+    // 修改標題
+    const botTitle = document.querySelector('.chat-header h2');
+    if (botTitle) botTitle.innerText = CONFIG.botName;
+
+    // 更新頭像
+    const avatarImg = document.getElementById('bunny-header-icon');
+    if (avatarImg) avatarImg.src = CONFIG.avatarUrl;
+
+    // 動態產生快速選單按鈕
+    const chipContainer = document.getElementById('quick-replies');
+    if (chipContainer) {
+        chipContainer.innerHTML = '';
+        CONFIG.chips.split(',').forEach(text => {
+            const chip = document.createElement('div');
+            chip.className = 'chip';
+            chip.innerText = text.trim();
+            chip.onclick = () => handleUserMessage(text.trim());
+            chipContainer.appendChild(chip);
+        });
+    }
+}
 
 const launcher = document.getElementById('bunny-launcher');
 const chatContainer = document.getElementById('chat-container');
@@ -22,43 +67,21 @@ const userInput = document.getElementById('user-input');
 const chatMessages = document.getElementById('chat-messages');
 const typingIndicator = document.getElementById('typing-indicator');
 
-// --- 2. 介面初始化 ---
-// 動態產生快速選單按鈕
-const chipContainer = document.getElementById('quick-replies');
-if (chipContainer) {
-    chipContainer.innerHTML = '';
-    CONFIG.chips.split(',').forEach(text => {
-        const chip = document.createElement('div');
-        chip.className = 'chip';
-        chip.innerText = text.trim();
-        chip.onclick = () => handleUserMessage(text.trim());
-        chipContainer.appendChild(chip);
+// --- 3. 介面控制 ---
+// 預設常態式打開
+chatContainer.classList.add('active');
+if (launcher) launcher.style.display = 'none';
+
+if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+        // 嘗試關閉視窗
+        window.close();
+        // 如果被阻擋，返回上一頁
+        setTimeout(() => {
+            window.history.back();
+        }, 100);
     });
 }
-
-// 修改標題
-const botTitle = document.querySelector('.chat-header h2');
-if (botTitle) botTitle.innerText = CONFIG.botName;
-
-// --- 3. 介面控制 ---
-// 頁面載入時自動打開聊天視窗
-chatContainer.classList.add('active');
-launcher.style.display = 'none'; // 隱藏啟動按鈕
-
-launcher.addEventListener('click', () => {
-    chatContainer.classList.add('active');
-    launcher.style.display = 'none';
-    setTimeout(() => userInput.focus(), 400);
-});
-
-closeBtn.addEventListener('click', () => {
-    // 嘗試關閉視窗，如果無法關閉則返回上一頁
-    window.close();
-    // 如果 window.close() 被瀏覽器阻擋，就返回上一頁
-    setTimeout(() => {
-        window.history.back();
-    }, 100);
-});
 
 // --- 4. 聊天邏輯 ---
 chatForm.addEventListener('submit', (e) => {
@@ -66,66 +89,52 @@ chatForm.addEventListener('submit', (e) => {
     handleUserMessage(userInput.value.trim());
 });
 
-async function handleUserMessage(message) {
-    if (!message) return;
+async function handleUserMessage(text) {
+    if (!text) return;
 
-    addMessage(message, 'user');
+    // 使用者訊息
+    addMessage(text, 'user');
     userInput.value = '';
-    setTyping(true);
+
+    // 顯示思考中
+    typingIndicator.style.display = 'flex';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-        const response = await getBotResponse(message);
-        addMessage(response, 'bot');
+        const response = await fetch(CONFIG.apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: text }]
+            })
+        });
+
+        const data = await response.json();
+        typingIndicator.style.display = 'none';
+
+        if (data.choices && data.choices[0].message) {
+            addMessage(data.choices[0].message.content, 'bot');
+        } else if (data.error) {
+            addMessage("❌ 錯誤：" + data.error.message, 'bot');
+        } else {
+            addMessage("❌ 兔兔現在沒辦法回應，請檢查後台設定。", 'bot');
+        }
+
     } catch (error) {
-        addMessage("哎呀，兔兔的腦腦好像當機了... 可能是 API Key 有問題喔！🥕", 'bot');
-        console.error("API Error:", error);
-    } finally {
-        setTyping(false);
+        typingIndicator.style.display = 'none';
+        addMessage("❌ 連線失敗，請稍後再試。", 'bot');
+        console.error(error);
     }
 }
 
-function addMessage(text, sender) {
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('message');
-    msgDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
-
-    const formattedText = text.replace(/\n/g, '<br>');
-
-    msgDiv.innerHTML = `
-        <div class="msg-content">${formattedText}</div>
-        <div class="msg-time" style="font-size: 0.6rem; opacity: 0.5; margin-top: 4px; text-align: ${sender === 'user' ? 'right' : 'left'}">
-            ${time}
-        </div>
-    `;
-
-    chatMessages.appendChild(msgDiv);
-    chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+function addMessage(text, side) {
+    const div = document.createElement('div');
+    div.className = `message ${side}-message`;
+    div.innerText = text;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return div;
 }
 
-function setTyping(isTyping) {
-    typingIndicator.style.display = isTyping ? 'flex' : 'none';
-    chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
-}
-
-async function getBotResponse(userMsg) {
-    const response = await fetch(CONFIG.apiEndpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: CONFIG.model || "llama-3.3-70b-versatile",
-            messages: [
-                { role: "system", content: CONFIG.prompt },
-                { role: "user", content: userMsg }
-            ],
-            temperature: 0.7,
-            max_tokens: 1024
-        })
-    });
-
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message);
-    return data.choices[0].message.content;
-}
+// 啟動同步
+syncConfig();

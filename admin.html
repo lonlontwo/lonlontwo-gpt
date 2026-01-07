@@ -313,6 +313,15 @@
                     <span id="colorValue">#ff8fb1</span>
                 </div>
             </div>
+            <div class="form-group">
+                <label>頭像圖片 URL</label>
+                <input type="text" id="avatarUrl" placeholder="https://example.com/avatar.png">
+                <div class="hint">貼上圖片連結，會顯示在聊天視窗的左上角。建議使用正方形圖片。</div>
+                <div id="avatarPreview" style="margin-top: 10px;">
+                    <img id="avatarPreviewImg" src="" alt="預覽"
+                        style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ff8fb1; display: none;">
+                </div>
+            </div>
         </div>
 
         <!-- 知識庫設定 -->
@@ -366,6 +375,8 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
                     document.getElementById('color').value = data.color || '#ff8fb1';
                     document.getElementById('colorValue').textContent = data.color || '#ff8fb1';
                     document.getElementById('knowledgeUrls').value = data.knowledgeUrls || '';
+                    document.getElementById('avatarUrl').value = data.avatarUrl || '';
+                    updateAvatarPreview(data.avatarUrl);
                     showStatus('✅ 設定載入成功！', 'success');
                 } else {
                     showStatus('ℹ️ 尚無儲存的設定，請填寫後儲存。', 'success');
@@ -384,6 +395,7 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
                 chips: document.getElementById('chips').value.trim(),
                 color: document.getElementById('color').value,
                 knowledgeUrls: document.getElementById('knowledgeUrls').value.trim(),
+                avatarUrl: document.getElementById('avatarUrl').value.trim(),
                 updatedAt: new Date().toISOString()
             };
 
@@ -410,6 +422,22 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
         // 顏色即時預覽
         document.getElementById('color').addEventListener('input', (e) => {
             document.getElementById('colorValue').textContent = e.target.value;
+        });
+
+        // 頭像預覽
+        function updateAvatarPreview(url) {
+            const img = document.getElementById('avatarPreviewImg');
+            if (url) {
+                img.src = url;
+                img.style.display = 'block';
+                img.onerror = () => { img.style.display = 'none'; };
+            } else {
+                img.style.display = 'none';
+            }
+        }
+
+        document.getElementById('avatarUrl').addEventListener('input', (e) => {
+            updateAvatarPreview(e.target.value);
         });
 
         // 切換密碼顯示
