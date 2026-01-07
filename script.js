@@ -41,15 +41,19 @@ const botTitle = document.querySelector('.chat-header h2');
 if (botTitle) botTitle.innerText = CONFIG.botName;
 
 // --- 3. 介面控制 ---
+// 頁面載入時自動打開聊天視窗
+chatContainer.classList.add('active');
+launcher.style.display = 'none'; // 隱藏啟動按鈕
+
 launcher.addEventListener('click', () => {
     chatContainer.classList.add('active');
-    launcher.style.transform = 'scale(0)';
+    launcher.style.display = 'none';
     setTimeout(() => userInput.focus(), 400);
 });
 
 closeBtn.addEventListener('click', () => {
     chatContainer.classList.remove('active');
-    launcher.style.transform = 'scale(1)';
+    launcher.style.display = 'flex';
 });
 
 // --- 4. 聊天邏輯 ---
