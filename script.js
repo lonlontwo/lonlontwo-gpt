@@ -1,9 +1,8 @@
 // --- 1. 設定與初始化 ---
 const defaultConfig = {
     botName: "兔兔助理",
-    apiKey: "YOUR_GROQ_API_KEY", // 請在 localStorage 中設定
-    apiEndpoint: "https://api.groq.com/openai/v1/chat/completions",
-    model: "llama-3.3-70b-versatile", // Groq 的免費模型
+    apiEndpoint: "/api/chat", // 使用我們自己的代理 API
+    model: "llama-3.3-70b-versatile",
     prompt: "你是一個網站助理，名叫「兔兔助理」。你的語氣非常可愛、親切，常帶有兔子相關的表情符號（如 🐰, 🥕, 🐾）。你負責協助使用者了解『兔兔網』的內容。",
     chips: "兔兔網在哪裡？,助理能做什麼？,聯絡站長",
     color: "#ff8fb1"
@@ -105,8 +104,7 @@ async function getBotResponse(userMsg) {
     const response = await fetch(CONFIG.apiEndpoint, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${CONFIG.apiKey}`
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({
             model: CONFIG.model || "llama-3.3-70b-versatile",
