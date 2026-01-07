@@ -4,187 +4,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐰 兔兔助理 - 後台管理</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>🐰 兔兔助理 - 專業後台管理</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Noto+Sans+TC:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --bg-deep: #121212;
+            --bg-card: #1e1e1e;
+            --bg-input: #2a2a2a;
+            --primary-orange: #ff6b00;
+            --text-main: #e0e0e0;
+            --text-muted: #999;
+            --border-color: #333;
+            --danger-red: #ff4444;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
         }
 
         body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background: linear-gradient(135deg, #fff5f7 0%, #ffe6ea 100%);
+            background-color: var(--bg-deep);
+            color: var(--text-main);
             min-height: 100vh;
-            padding: 30px;
+            padding: 20px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
         }
 
+        /* 頂部標題 */
         .header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .header h1 {
-            color: #ff6b8a;
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            color: #888;
-        }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 40px rgba(255, 107, 138, 0.1);
-        }
-
-        .card h2 {
-            color: #ff6b8a;
-            margin-bottom: 20px;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
+        /* 分頁按鈕 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-orange);
+            color: white;
+            border-color: var(--primary-orange);
+        }
+
+        .tab-btn .badge {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* 卡片區域 */
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 表單樣式 */
         .form-group {
             margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
             margin-bottom: 8px;
-            font-weight: 500;
-            color: #555;
         }
 
         .form-group input,
         .form-group textarea {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #eee;
-            border-radius: 12px;
-            font-size: 14px;
-            font-family: inherit;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
             transition: border-color 0.3s;
         }
 
         .form-group input:focus,
         .form-group textarea:focus {
-            outline: none;
-            border-color: #ff6b8a;
+            border-color: var(--primary-orange);
         }
 
-        .form-group textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .form-group .hint {
-            font-size: 12px;
-            color: #999;
-            margin-top: 5px;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #ff6b8a 0%, #ff8fb1 100%);
-            color: white;
-            border: none;
-            padding: 14px 30px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(255, 107, 138, 0.4);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
+        .hint {
+            font-size: 0.8rem;
             color: #666;
+            margin-top: 6px;
         }
 
-        .btn-secondary:hover {
-            background: #e0e0e0;
-            box-shadow: none;
-        }
-
-        .btn-danger {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-
-        .btn-danger:hover {
-            background: #ffcdd2;
-            box-shadow: 0 5px 15px rgba(198, 40, 40, 0.2);
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .status {
-            padding: 15px;
-            border-radius: 12px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        .status.success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            display: block;
-        }
-
-        .status.error {
-            background: #ffebee;
-            color: #c62828;
-            display: block;
-        }
-
-        .color-preview {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .color-preview input[type="color"] {
-            width: 60px;
-            height: 40px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .api-key-input {
+        /* API Key 專用容器 */
+        .api-key-container {
             position: relative;
-        }
-
-        .api-key-input input {
-            padding-right: 50px;
         }
 
         .toggle-visibility {
@@ -194,112 +163,164 @@
             transform: translateY(-50%);
             background: none;
             border: none;
+            color: var(--text-muted);
             cursor: pointer;
-            font-size: 18px;
+        }
+
+        /* 顏色預覽樣式 */
+        .color-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 4px;
+            background: none;
+            cursor: pointer;
+        }
+
+        /* 主按鈕 (大橘色) */
+        .save-btn {
+            width: 100%;
+            background: var(--primary-orange);
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .save-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        /* 輔助按鈕群組 */
+        .secondary-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 15px;
+        }
+
+        .btn-outline {
+            flex: 1;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-input);
+            color: var(--text-main);
+        }
+
+        .btn-quit {
+            color: var(--danger-red);
+            border-color: rgba(255, 68, 68, 0.3);
+        }
+
+        .btn-quit:hover {
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        /* 狀態提示 */
+        #status {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            z-index: 9999;
+            display: none;
+        }
+
+        #status.success {
+            background: #2e7d32;
+            color: white;
+            display: block;
+        }
+
+        #status.error {
+            background: #c62828;
+            color: white;
+            display: block;
+        }
+
+        /* 警示文字 */
+        .expiry-timer {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .expiry-warning {
+            color: var(--danger-red);
+            font-weight: bold;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .warning-box {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 12px;
+            background: rgba(255, 107, 0, 0.1);
+            border: 1px solid rgba(255, 107, 0, 0.3);
             padding: 15px;
+            border-radius: 8px;
             margin-bottom: 20px;
-            color: #856404;
+            font-size: 0.9rem;
+            color: #cc6600;
         }
 
-        .warning-box strong {
+        /* 分頁隱藏控制 */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
             display: block;
-            margin-bottom: 5px;
         }
 
-        /* 手機版 RWD */
+        /* 手機 RWD */
         @media (max-width: 600px) {
             body {
                 padding: 15px;
             }
 
-            .card-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 15px;
-            }
-
-            .card-header h2 {
-                margin-bottom: 0;
-            }
-
-            .expiry-timer {
-                font-size: 0.9rem;
-                color: #666;
-                font-weight: 500;
-            }
-
-            .expiry-warning {
-                color: #c62828 !important;
-                font-weight: 700 !important;
-                animation: blinker 1.5s linear infinite;
-            }
-
-            @keyframes blinker {
-                50% {
-                    opacity: 0.5;
-                }
-            }
-
-            .container {
-                padding: 0;
-            }
-
             .header h1 {
-                font-size: 1.5rem;
+                font-size: 1.2rem;
             }
 
-            .header p {
-                font-size: 0.9rem;
-            }
-
-            .card {
-                padding: 20px;
-                border-radius: 16px;
-                margin-bottom: 15px;
-            }
-
-            .card h2 {
-                font-size: 1rem;
-            }
-
-            .form-group {
-                margin-bottom: 15px;
-            }
-
-            .form-group input,
-            .form-group textarea {
-                padding: 10px 12px;
-                font-size: 16px;
-                /* 防止 iOS 自動縮放 */
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-                padding: 14px;
-            }
-
-            .warning-box {
-                padding: 12px;
-                font-size: 0.85rem;
-            }
-
-            .color-preview {
+            .tabs {
                 flex-wrap: wrap;
             }
 
-            .api-key-input input {
-                font-size: 14px;
+            .tab-btn {
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
+            }
+
+            .secondary-actions {
+                flex-direction: column;
             }
         }
     </style>
@@ -308,93 +329,111 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🐰 兔兔助理後台管理</h1>
-            <p>在這裡管理您的 AI 助理設定</p>
+            <h1>🛠️ 兔兔助理後台管理</h1>
+            <div id="expiryTimer" class="expiry-timer"></div>
         </div>
 
-        <!-- API 設定 -->
-        <div class="card">
-            <div class="card-header">
-                <h2>🔑 API 設定</h2>
-                <div id="expiryTimer" class="expiry-timer"></div>
-            </div>
-            <div class="warning-box">
-                <strong>⚠️ 重要提醒</strong>
-                Groq API Key 有效期限為一年，到期前請記得更換新的 Key。
-                <br>申請網址：<a href="https://console.groq.com/keys" target="_blank">https://console.groq.com/keys</a>
-            </div>
-            <div class="form-group">
-                <label>Groq API Key</label>
-                <div class="api-key-input">
-                    <input type="password" id="groqApiKey" placeholder="gsk_xxxxxxxxxxxxxxxx">
-                    <button class="toggle-visibility" onclick="toggleKeyVisibility()">👁️</button>
-                </div>
-                <div class="hint">這個 Key 會安全地儲存在雲端，訪客看不到</div>
-            </div>
-            <div class="form-group">
-                <label>API Key 到期日期</label>
-                <input type="date" id="keyExpiryDate">
-                <div class="hint">設定後，右上角會顯示倒數計時。目前的 Key 預計 2026-12-31 到期。</div>
-            </div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('basic')">
+                <i class="fas fa-cog"></i> 專屬設置
+            </button>
+            <button class="tab-btn" onclick="switchTab('api')">
+                <i class="fas fa-key"></i> API 金鑰
+            </button>
+            <button class="tab-btn" onclick="switchTab('knowledge')">
+                <i class="fas fa-book"></i> 知識庫 <span class="badge" id="knowledgeCount">0</span>
+            </button>
         </div>
 
-        <!-- 基本設定 -->
-        <div class="card">
-            <h2>⚙️ 基本設定</h2>
-            <div class="form-group">
-                <label>助理名稱</label>
-                <input type="text" id="botName" placeholder="兔兔助理">
-            </div>
-            <div class="form-group">
-                <label>AI 指令 (Prompt)</label>
-                <textarea id="prompt" placeholder="告訴 AI 它的角色和行為..."></textarea>
-                <div class="hint">說明 AI 的身份、語氣、任務等</div>
-            </div>
-            <div class="form-group">
-                <label>快速按鈕（逗號分隔）</label>
-                <input type="text" id="chips" placeholder="功能介紹,聯絡站長,關於我們">
-            </div>
-            <div class="form-group">
-                <label>主題色</label>
-                <div class="color-preview">
-                    <input type="color" id="color" value="#ff8fb1">
-                    <span id="colorValue">#ff8fb1</span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>頭像圖片 URL</label>
-                <input type="text" id="avatarUrl" placeholder="https://example.com/avatar.png">
-                <div class="hint">貼上圖片連結，會顯示在聊天視窗的左上角。建議使用正方形圖片。</div>
-                <div id="avatarPreview" style="margin-top: 10px;">
-                    <img id="avatarPreviewImg" src="" alt="預覽"
-                        style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ff8fb1; display: none;">
+        <!-- 儲存主按鈕放在分頁上方（參考圖片樣式） -->
+        <button class="save-btn" onclick="saveConfig()">
+            <i class="fas fa-save"></i> 儲存所有變更
+        </button>
+
+        <div style="margin-top: 25px;">
+            <!-- 專屬設置分頁 -->
+            <div id="tab-basic" class="tab-content active">
+                <div class="card">
+                    <h2>⚙️ 基本資訊</h2>
+                    <div class="form-group">
+                        <label>助理顯示名稱</label>
+                        <input type="text" id="botName" placeholder="例如：兔兔助理">
+                    </div>
+                    <div class="form-group">
+                        <label>頭像圖片連結 (Image URL)</label>
+                        <input type="text" id="avatarUrl" placeholder="https://...">
+                        <div id="avatarPreview" style="margin-top: 10px;">
+                            <img id="avatarPreviewImg" src=""
+                                style="width: 50px; height: 50px; border-radius: 50%; display:none; border: 1px solid var(--border-color);">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>AI 指令 (System Prompt)</label>
+                        <textarea id="prompt" rows="5" placeholder="設定 AI 的個性與行為..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>快速按鈕 (請以逗號分隔)</label>
+                        <input type="text" id="chips" placeholder="功能介紹, 關於我們, 聯絡站長">
+                    </div>
+                    <div class="form-group">
+                        <label>介面主題色</label>
+                        <div class="color-group">
+                            <input type="color" id="color" value="#ff8fb1">
+                            <span id="colorValue" style="font-family: monospace;">#ff8fb1</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 知識庫設定 -->
-        <div class="card">
-            <h2>📚 知識庫連結</h2>
-            <div class="form-group">
-                <label>資料來源 URL（一行一個）</label>
-                <textarea id="knowledgeUrls" placeholder="https://example.com/data1.js
-https://example.com/data2.js
-https://example.com/buttons.js" style="min-height: 120px;"></textarea>
-                <div class="hint">貼上您的 JS 資料檔連結，兔兔會自動讀取並學習這些內容。當資料更新時，兔兔也會跟著更新！</div>
+            <!-- API 設定分頁 -->
+            <div id="tab-api" class="tab-content">
+                <div class="card">
+                    <h2>🔑 認證與安全性</h2>
+                    <div class="warning-box">
+                        <strong>安全性提醒：</strong> Groq API Key 將加密儲存於雲端，請確保不要外洩。
+                    </div>
+                    <div class="form-group">
+                        <label>Groq API 金鑰</label>
+                        <div class="api-key-container">
+                            <input type="password" id="groqApiKey" placeholder="gsk_...">
+                            <button class="toggle-visibility" onclick="toggleKeyVisibility()">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>API Key 到期日期</label>
+                        <input type="date" id="keyExpiryDate">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 知識庫分頁 -->
+            <div id="tab-knowledge" class="tab-content">
+                <div class="card">
+                    <h2>📚 外部知識庫連結</h2>
+                    <div class="form-group">
+                        <label>資料來源 JS / TXT URL (一行一個)</label>
+                        <textarea id="knowledgeUrls" rows="8" placeholder="https://example.com/data.js"></textarea>
+                        <div class="hint">助理會自動讀取這些連結中的內容作為知識來源。</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- 按鈕 -->
-        <div class="button-group">
-            <button class="btn" onclick="saveConfig()">💾 儲存設定</button>
-            <button class="btn btn-secondary" onclick="loadConfig()">🔄 重新載入</button>
-            <button class="btn btn-danger" onclick="closeAdmin()">🚪 關閉後台</button>
+        <div class="secondary-actions">
+            <button class="btn-outline" onclick="loadConfig()">
+                <i class="fas fa-sync-alt"></i> 重新載入設定
+            </button>
+            <button class="btn-outline btn-quit" onclick="closeAdmin()">
+                <i class="fas fa-door-open"></i> 關閉後台視窗
+            </button>
         </div>
 
-        <div id="status" class="status"></div>
+        <div id="status"></div>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase 原有邏輯保持不變 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -411,6 +450,15 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 分頁切換邏輯
+        window.switchTab = function (tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        };
+
         // 載入設定
         window.loadConfig = async function () {
             try {
@@ -426,11 +474,12 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
                     document.getElementById('knowledgeUrls').value = data.knowledgeUrls || '';
                     document.getElementById('avatarUrl').value = data.avatarUrl || '';
                     document.getElementById('keyExpiryDate').value = data.keyExpiryDate || '';
+
                     updateAvatarPreview(data.avatarUrl);
                     updateExpiryTimer(data.keyExpiryDate);
+                    updateKnowledgeCount(data.knowledgeUrls);
+
                     showStatus('✅ 設定載入成功！', 'success');
-                } else {
-                    showStatus('ℹ️ 尚無儲存的設定，請填寫後儲存。', 'success');
                 }
             } catch (e) {
                 showStatus('❌ 載入失敗：' + e.message, 'error');
@@ -453,12 +502,14 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
 
             if (!config.groqApiKey) {
                 showStatus('❌ 請填寫 Groq API Key！', 'error');
+                switchTab('api');
                 return;
             }
 
             try {
                 await setDoc(doc(db, "configs", "bunny-assistant"), config, { merge: true });
-                showStatus('✅ 設定儲存成功！變更將在幾秒內生效。', 'success');
+                showStatus('✅ 設定儲存成功！', 'success');
+                updateKnowledgeCount(config.knowledgeUrls);
             } catch (e) {
                 showStatus('❌ 儲存失敗：' + e.message, 'error');
             }
@@ -467,77 +518,58 @@ https://example.com/buttons.js" style="min-height: 120px;"></textarea>
         function showStatus(msg, type) {
             const status = document.getElementById('status');
             status.textContent = msg;
-            status.className = 'status ' + type;
-            setTimeout(() => { status.className = 'status'; }, 5000);
+            status.className = type;
+            status.style.display = 'block';
+            setTimeout(() => { status.style.display = 'none'; }, 3000);
         }
 
-        // 顏色即時預覽
-        document.getElementById('color').addEventListener('input', (e) => {
-            document.getElementById('colorValue').textContent = e.target.value;
-        });
-
-        // 頭像預覽
+        // 即時預覽與計數
         function updateAvatarPreview(url) {
             const img = document.getElementById('avatarPreviewImg');
             if (url) {
-                img.src = url;
-                img.style.display = 'block';
+                img.src = url; img.style.display = 'block';
                 img.onerror = () => { img.style.display = 'none'; };
-            } else {
-                img.style.display = 'none';
-            }
+            } else { img.style.display = 'none'; }
         }
 
-        document.getElementById('avatarUrl').addEventListener('input', (e) => {
-            updateAvatarPreview(e.target.value);
-        });
+        function updateKnowledgeCount(text) {
+            const count = text ? text.split('\n').filter(u => u.trim()).length : 0;
+            document.getElementById('knowledgeCount').textContent = count;
+        }
 
-        // 倒數計時功能
         function updateExpiryTimer(dateStr) {
             const timerEl = document.getElementById('expiryTimer');
-            if (!dateStr) {
-                timerEl.textContent = '';
-                return;
-            }
-
-            const expiryDate = new Date(dateStr);
-            const now = new Date();
-            const diffTime = expiryDate - now;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+            if (!dateStr) return;
+            const diffDays = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 3600 * 24));
             if (diffDays < 0) {
                 timerEl.textContent = '❌ 已過期';
-                timerEl.className = 'expiry-timer expiry-warning';
+                timerEl.classList.add('expiry-warning');
             } else {
-                timerEl.textContent = `⏳ 剩餘 ${diffDays} 天`;
-                if (diffDays <= 10) {
-                    timerEl.className = 'expiry-timer expiry-warning';
-                } else {
-                    timerEl.className = 'expiry-timer';
-                }
+                timerEl.textContent = `⏳ API 剩餘 ${diffDays} 天`;
+                if (diffDays <= 10) timerEl.classList.add('expiry-warning');
+                else timerEl.classList.remove('expiry-warning');
             }
         }
 
-        document.getElementById('keyExpiryDate').addEventListener('change', (e) => {
-            updateExpiryTimer(e.target.value);
-        });
+        document.getElementById('avatarUrl').addEventListener('input', (e) => updateAvatarPreview(e.target.value));
+        document.getElementById('color').addEventListener('input', (e) => document.getElementById('colorValue').textContent = e.target.value);
+        document.getElementById('keyExpiryDate').addEventListener('change', (e) => updateExpiryTimer(e.target.value));
 
-        // 關閉後台功能
-        window.closeAdmin = function () {
-            window.close();
-            // 如果無法關閉視窗，則返回上一頁
-            setTimeout(() => {
-                window.history.back();
-            }, 100);
-        };
-
-        // 切換密碼顯示
         window.toggleKeyVisibility = function () {
             const input = document.getElementById('groqApiKey');
-            input.type = input.type === 'password' ? 'text' : 'password';
+            const icon = event.currentTarget.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text'; icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password'; icon.className = 'fas fa-eye';
+            }
         };
 
-        // 頁面載入時讀取設定
+        window.closeAdmin = function () {
+            window.close();
+            setTimeout(() => { window.history.back(); }, 100);
+        };
+
         loadConfig();
     </script>
 </body>
