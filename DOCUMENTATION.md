@@ -4,6 +4,9 @@
 
 ## 📅 專案概況
 - **定位**：嵌入式 AI 網站助理，支援自動開啟、知識庫學習及雲端化管理。
+- **部署網址**：
+  - 🌐 **前台 (聊天介面)**：https://lonlontwo-gpt.pages.dev/
+  - ⚙️ **後台 (管理介面)**：https://lonlontwo-gpt.pages.dev/admin.html
 - **核心技術**：
   - **前端**：Vanilla JS, CSS3 (RWD), HTML5。
   - **後端代理**：Cloudflare Workers (用於隱藏 API Key 並處理跨域請求)。

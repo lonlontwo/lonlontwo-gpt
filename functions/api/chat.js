@@ -86,22 +86,56 @@ export async function onRequestPost(context) {
             messages = [{ role: "system", content: enhancedPrompt }, ...messages];
         }
 
-        // 7. 呼叫 Groq API
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${GROQ_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: requestBody.model || "llama-3.3-70b-versatile",
-                messages: messages,
-                temperature: requestBody.temperature || 0.7,
-                max_tokens: requestBody.max_tokens || 1024
-            })
-        });
+        // 7. 呼叫 Groq API (含 Fallback 機制)
+        const primaryModel = requestBody.model || "llama-3.3-70b-versatile";
+        const fallbackModels = [
+            "llama-3.1-8b-instant",      // 8B 快速模型，限制較寬鬆
+            "mixtral-8x7b-32768",        // Mixtral MoE 模型
+            "gemma2-9b-it"               // Google Gemma2 9B
+        ];
 
-        const data = await response.json();
+        const modelsToTry = [primaryModel, ...fallbackModels];
+        let data = null;
+        let lastError = null;
+
+        for (const model of modelsToTry) {
+            try {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${GROQ_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: messages,
+                        temperature: requestBody.temperature || 0.7,
+                        max_tokens: requestBody.max_tokens || 1024
+                    })
+                });
+
+                data = await response.json();
+
+                // 如果成功或非速率限制錯誤，跳出迴圈
+                if (response.ok || response.status !== 429) {
+                    console.log(`✅ 使用模型: ${model}`);
+                    break;
+                }
+
+                // 429 錯誤 = 速率限制，嘗試下一個模型
+                console.log(`⚠️ 模型 ${model} 被限速，嘗試備用模型...`);
+                lastError = data;
+
+            } catch (e) {
+                console.log(`❌ 模型 ${model} 失敗: ${e.message}`);
+                lastError = { error: { message: e.message } };
+            }
+        }
+
+        // 如果所有模型都失敗
+        if (!data || (data.error && !data.choices)) {
+            data = lastError || { error: { message: "所有模型都暫時無法使用，請稍後再試。" } };
+        }
 
         return new Response(JSON.stringify(data), {
             headers: {
