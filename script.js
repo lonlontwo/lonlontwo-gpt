@@ -1,3 +1,5 @@
+/* --- 兔兔助理：直接呼叫 HuggingFace 版 --- */
+
 const defaultConfig = {
     botName: "兔兔助理", apiEndpoint: "/api/chat",
     chips: "兔兔網在哪裡？,助理能做什麼？,聯絡站長",
@@ -5,6 +7,10 @@ const defaultConfig = {
     avatarUrl: "https://raw.githubusercontent.com/lonlontwo/lonlontwo-gpt/main/bunny-avatar.png"
 };
 let CONFIG = { ...defaultConfig };
+
+// HuggingFace 直接呼叫設定
+const HF_TOKEN = "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";
+const HF_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell";
 
 async function syncConfig() {
     try {
@@ -65,23 +71,38 @@ async function handleUserMessage(text) {
     }
 }
 
+// 🎨 直接從瀏覽器呼叫 HuggingFace（繞過 Cloudflare Worker）
 async function drawImage(prompt, imgEl, loaderEl) {
     try {
-        const resp = await fetch("/api/draw", {
+        loaderEl.innerHTML = '🐰 FLUX AI 生圖中...<br><small>約需 5-10 秒</small>';
+        
+        const resp = await fetch(HF_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt })
+            headers: {
+                "Authorization": `Bearer ${HF_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                inputs: prompt,
+                parameters: { num_inference_steps: 4 }
+            })
         });
-        const data = await resp.json();
-        if (data.image) {
-            imgEl.src = data.image;
-            imgEl.style.display = 'block';
-            loaderEl.style.display = 'none';
-        } else {
-            loaderEl.innerText = '❌ 生圖失敗，請稍後再試。';
+
+        if (!resp.ok) {
+            const errText = await resp.text();
+            throw new Error(`HF ${resp.status}: ${errText.slice(0, 100)}`);
         }
-    } catch (e) {
-        loaderEl.innerText = '❌ 生圖連線失敗。';
+
+        // HuggingFace 直接回傳圖片二進位資料
+        const blob = await resp.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        imgEl.src = objectUrl;
+        imgEl.style.display = 'block';
+        loaderEl.style.display = 'none';
+
+    } catch (err) {
+        console.error("生圖錯誤:", err);
+        loaderEl.innerText = `❌ 生圖失敗：${err.message}`;
     }
 }
 
@@ -96,9 +117,9 @@ function addMessage(text, side) {
         const uid = Date.now();
         div.innerHTML = `
             ${cleanText ? `<div style="margin-bottom:8px">${cleanText}</div>` : ''}
-            <div style="border:2px dashed var(--primary-color); padding:8px; border-radius:12px; background:#fff; text-align:center; margin-top:8px;">
-                <div id="loader-${uid}" style="color:var(--primary-color); padding:15px;">🐰 HuggingFace SDXL 生圖中...<br><small>品質高，需要約 15-20 秒，請稍候</small></div>
-                <img id="img-${uid}" style="display:none; width:100%; border-radius:8px;">
+            <div style="border:2px dashed var(--primary-color); padding:10px; border-radius:12px; background:#fff; text-align:center; margin-top:8px;">
+                <div id="loader-${uid}" style="color:var(--primary-color); padding:15px; font-size:14px;">🐰 FLUX AI 生圖中...</div>
+                <img id="img-${uid}" style="display:none; width:100%; border-radius:8px; margin-top:8px;">
             </div>`;
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
