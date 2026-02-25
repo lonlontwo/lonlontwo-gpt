@@ -3,7 +3,7 @@ const defaultConfig = {
     botName: "兔兔助理",
     apiEndpoint: "/api/chat",
     model: "llama-3.3-70b-versatile",
-    prompt: "你是一個網站助理，名叫「兔兔助理」。你的語氣非常可愛、親切，常帶有兔子相關的表情符號（如 🐰, 🥕, 🐾）。你負責協助使用者了解『兔兔網』的內容。",
+    prompt: "你是一個網站助理，名叫「兔兔助理」。你的語氣非常可愛、親切。當使用者要求畫圖時，請在回覆中加入 [DRAW: 英文描述] 格式。",
     chips: "兔兔網在哪裡？,助理能做什麼？,聯絡站長",
     color: "#ff8fb1",
     avatarUrl: "https://raw.githubusercontent.com/lonlontwo/lonlontwo-gpt/main/bunny-avatar.png"
@@ -11,7 +11,7 @@ const defaultConfig = {
 
 let CONFIG = { ...defaultConfig };
 
-// 抓取雲端設定 (Firebase Firestore REST API)
+// 抓取雲端設定
 async function syncConfig() {
     try {
         const firebaseUrl = "https://firestore.googleapis.com/v1/projects/green-tract-416604/databases/(default)/documents/configs/bunny-assistant";
@@ -23,8 +23,6 @@ async function syncConfig() {
             if (data.fields.chips) CONFIG.chips = data.fields.chips.stringValue;
             if (data.fields.color) CONFIG.color = data.fields.color.stringValue;
             if (data.fields.avatarUrl) CONFIG.avatarUrl = data.fields.avatarUrl.stringValue;
-
-            // 更新介面
             applyConfig();
         }
     } catch (e) {
@@ -34,18 +32,12 @@ async function syncConfig() {
 }
 
 function applyConfig() {
-    // 套用主題色
     document.documentElement.style.setProperty('--primary-color', CONFIG.color);
-
-    // 修改標題
     const botTitle = document.querySelector('.chat-header h2');
     if (botTitle) botTitle.innerText = CONFIG.botName;
-
-    // 更新頭像
     const avatarImg = document.getElementById('bunny-header-icon');
     if (avatarImg) avatarImg.src = CONFIG.avatarUrl;
 
-    // 動態產生快速選單按鈕
     const chipContainer = document.getElementById('quick-replies');
     if (chipContainer) {
         chipContainer.innerHTML = '';
@@ -59,47 +51,14 @@ function applyConfig() {
     }
 }
 
-const launcher = document.getElementById('bunny-launcher');
 const chatContainer = document.getElementById('chat-container');
-const closeBtn = document.getElementById('close-chat');
-const maximizeBtn = document.getElementById('maximize-chat');
 const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
 const chatMessages = document.getElementById('chat-messages');
 const typingIndicator = document.getElementById('typing-indicator');
 
-// --- 3. 介面控制 ---
-// 預設常態式打開
 chatContainer.classList.add('active');
-if (launcher) launcher.style.display = 'none';
 
-// 最大化按鈕
-if (maximizeBtn) {
-    maximizeBtn.addEventListener('click', () => {
-        const isMaximized = chatContainer.classList.toggle('maximized');
-        const icon = maximizeBtn.querySelector('i');
-        if (isMaximized) {
-            icon.className = 'fas fa-compress-alt';
-            maximizeBtn.title = "還原";
-        } else {
-            icon.className = 'fas fa-expand-alt';
-            maximizeBtn.title = "最大化";
-        }
-    });
-}
-
-if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-        // 嘗試關閉視窗
-        window.close();
-        // 如果被阻擋，返回上一頁
-        setTimeout(() => {
-            window.history.back();
-        }, 100);
-    });
-}
-
-// --- 4. 聊天邏輯 ---
 chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     handleUserMessage(userInput.value.trim());
@@ -108,11 +67,9 @@ chatForm.addEventListener('submit', (e) => {
 async function handleUserMessage(text) {
     if (!text) return;
 
-    // 使用者訊息
     addMessage(text, 'user');
     userInput.value = '';
 
-    // 顯示思考中
     typingIndicator.style.display = 'flex';
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -130,27 +87,53 @@ async function handleUserMessage(text) {
 
         if (data.choices && data.choices[0].message) {
             addMessage(data.choices[0].message.content, 'bot');
-        } else if (data.error) {
-            addMessage("❌ 錯誤：" + data.error.message, 'bot');
         } else {
-            addMessage("❌ 兔兔現在沒辦法回應，請檢查後台設定。", 'bot');
+            addMessage("❌ 兔兔現在沒辦法回應，請稍後再試。", 'bot');
         }
 
     } catch (error) {
         typingIndicator.style.display = 'none';
-        addMessage("❌ 連線失敗，請稍後再試。", 'bot');
-        console.error(error);
+        addMessage("❌ 連線失敗，請檢查網路。", 'bot');
     }
 }
 
+// 核心函數：處理文字與生圖標籤
 function addMessage(text, side) {
     const div = document.createElement('div');
     div.className = `message ${side}-message`;
-    div.innerText = text;
+    
+    // 檢查機器人回覆中是否包含生圖標籤 [DRAW: description]
+    if (side === 'bot' && text.includes('[DRAW:')) {
+        const regex = /\[DRAW:\s*(.+?)\]/i;
+        const match = text.match(regex);
+        
+        if (match) {
+            const prompt = match[1];
+            const cleanText = text.replace(regex, '').trim();
+            const seed = Math.floor(Math.random() * 1000000);
+            // 使用更強的 FLUX 模型
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?seed=${seed}&nologo=true&model=flux&width=1024&height=1024`;
+
+            div.innerHTML = `
+                ${cleanText ? `<div style="margin-bottom: 8px;">${cleanText}</div>` : ''}
+                <div class="ai-image-card">
+                    <div class="image-loader"><span>🥕 兔兔正在努力畫圖...</span></div>
+                    <img src="${imageUrl}" class="ai-img" onload="this.style.display='block'; this.previousElementSibling.style.display='none';">
+                    <div class="image-overlay">
+                        <a href="${imageUrl}" target="_blank" title="查看大圖"><i class="fas fa-expand"></i></a>
+                    </div>
+                </div>
+            `;
+        } else {
+            div.innerText = text;
+        }
+    } else {
+        div.innerText = text;
+    }
+
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return div;
 }
 
-// 啟動同步
 syncConfig();
