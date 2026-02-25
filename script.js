@@ -65,51 +65,12 @@ async function handleUserMessage(text) {
     }
 }
 
-async function drawImage(prompt, imgEl, loaderEl) {
-    try {
-        loaderEl.innerHTML = '🐰 SDXL 生圖中...<br><small>約需 10-20 秒，請稍候</small>';
-        const resp = await fetch('/api/draw', {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt: prompt })
-        });
-        if (!resp.ok) {
-            let errMsg = `伺服器錯誤 ${resp.status}`;
-            try { const err = await resp.json(); errMsg = err.error || errMsg; } catch(e) {}
-            throw new Error(errMsg);
-        }
-        const blob = await resp.blob();
-        imgEl.src = URL.createObjectURL(blob);
-        imgEl.style.display = 'block';
-        loaderEl.style.display = 'none';
-    } catch (err) {
-        console.error("生圖錯誤:", err);
-        loaderEl.innerText = `❌ ${err.message}`;
-    }
-}
-
 function addMessage(text, side) {
     const div = document.createElement('div');
     div.className = `message ${side}-message`;
-    const drawRegex = /\[DRAW:\s*([\s\S]+?)\]/i;
-    if (side === 'bot' && drawRegex.test(text)) {
-        const match = text.match(drawRegex);
-        const prompt = match[1].replace(/[\n\r\[\]"]/g, ' ').trim();
-        const cleanText = text.replace(drawRegex, '').trim();
-        const uid = Date.now();
-        div.innerHTML = `
-            ${cleanText ? `<div style="margin-bottom:8px">${cleanText}</div>` : ''}
-            <div style="border:2px dashed var(--primary-color);padding:10px;border-radius:12px;background:#fff;text-align:center;margin-top:8px;">
-                <div id="loader-${uid}" style="color:var(--primary-color);padding:15px;font-size:14px;">🐰 SDXL 生圖中...</div>
-                <img id="img-${uid}" style="display:none;width:100%;border-radius:8px;margin-top:8px;">
-            </div>`;
-        chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        drawImage(prompt, document.getElementById(`img-${uid}`), document.getElementById(`loader-${uid}`));
-        return;
-    }
     div.innerText = text;
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
 syncConfig();
