@@ -10,37 +10,30 @@ export async function onRequestPost(context) {
         const HF_TOKEN = "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";
 
         const hfResponse = await fetch(
-            "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
+            "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0",
             {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${HF_TOKEN}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    inputs: prompt,
-                    parameters: { num_inference_steps: 4 }
-                })
+                body: JSON.stringify({ inputs: prompt })
             }
         );
 
         if (!hfResponse.ok) {
             const errText = await hfResponse.text();
-            throw new Error(`HF錯誤 ${hfResponse.status}: ${errText}`);
+            return new Response(JSON.stringify({ error: `HF ${hfResponse.status}: ${errText}` }), {
+                status: 500,
+                headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
         }
 
-        const imageBuffer = await hfResponse.arrayBuffer();
-        const uint8Array = new Uint8Array(imageBuffer);
-        let binary = '';
-        const chunkSize = 8192;
-        for (let i = 0; i < uint8Array.length; i += chunkSize) {
-            const chunk = uint8Array.subarray(i, i + chunkSize);
-            binary += String.fromCharCode.apply(null, chunk);
-        }
-        const base64 = btoa(binary);
-
-        return new Response(JSON.stringify({ image: `data:image/png;base64,${base64}` }), {
-            headers: { "Content-Type": "application/json", ...corsHeaders }
+        return new Response(hfResponse.body, {
+            headers: {
+                "Content-Type": "image/png",
+                "Access-Control-Allow-Origin": "*"
+            }
         });
 
     } catch (err) {
