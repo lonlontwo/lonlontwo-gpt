@@ -1,10 +1,8 @@
-/* --- 兔兔助理：終極暴力修復版 (生圖必出) --- */
-
+// --- 兔兔助理：極速防崩潰版 (修復 1033) ---
 const defaultConfig = {
     botName: "兔兔助理",
     apiEndpoint: "/api/chat",
-    model: "llama-3.3-70b-versatile",
-    prompt: "你是一個助理。生圖時請用 [DRAW: 英文詳細描述]。",
+    prompt: "你是一個可愛助理。生圖時請用 [DRAW: 英文描述]。",
     chips: "兔兔網在哪裡？,助理能做什麼？,聯絡站長",
     color: "#ff8fb1",
     avatarUrl: "https://raw.githubusercontent.com/lonlontwo/lonlontwo-gpt/main/bunny-avatar.png"
@@ -52,53 +50,70 @@ async function handleUserMessage(text) {
     userInput.value = '';
     typingIndicator.style.display = 'flex';
     chatMessages.scrollTop = chatMessages.scrollHeight;
+
     try {
+        // 🔹 增加更長的 Timeout 監控或優化請求
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25秒自動中斷，避免卡死
+
         const response = await fetch(CONFIG.apiEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: [{ role: "user", content: text }] })
+            body: JSON.stringify({ 
+                messages: [{ role: "user", content: text }],
+                stream: false // 暫時關閉 stream 測試穩定性
+            }),
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+
+        // 如果後端傳回 1033 或其他錯誤
+        if (!response.ok) {
+            const errCode = response.status;
+            throw new Error(`Cloudflare Error ${errCode}`);
+        }
+
         const data = await response.json();
         typingIndicator.style.display = 'none';
         if (data.choices) addMessage(data.choices[0].message.content, 'bot');
+
     } catch (e) {
         typingIndicator.style.display = 'none';
-        addMessage("❌ 連線異常，請稍後再試。", 'bot');
+        if (e.name === 'AbortError') {
+            addMessage("❌ Llama 思考太久了（超時），請換個簡單的問法試試！", 'bot');
+        } else {
+            addMessage(`❌ 出現了 1033 或連線錯誤，請稍後再試。`, 'bot');
+        }
     }
 }
 
-// 🛡️ 核心：絕對不出錯的生圖渲染器
 function addMessage(text, side) {
     const div = document.createElement('div');
     div.className = `message ${side}-message`;
     
-    // 1. 偵測有沒有畫圖標籤
-    const drawRegex = /\[DRAW:\s*([\s\S]+?)\]/i;
-    if (side === 'bot' && drawRegex.test(text)) {
-        const match = text.match(drawRegex);
-        // 強力清理提示詞：只留下字母、數字和空白，絕不留換行或引號
-        const prompt = match[1].replace(/[^a-zA-Z0-9 ]/g, " ").trim();
-        const cleanText = text.replace(drawRegex, '').trim();
-        const seed = Math.floor(Math.random() * 888888);
-        
-        // 生成 URL
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?seed=${seed}&nologo=true&model=turbo`;
+    if (side === 'bot' && text.includes('[DRAW:')) {
+        const match = text.match(/\[DRAW:\s*([\s\S]+?)\]/i);
+        if (match) {
+            const prompt = match[1].replace(/[^a-zA-Z0-9 ]/g, " ").trim();
+            const cleanText = text.replace(/\[DRAW:.+?\]/i, '').trim();
+            // 直接出圖，不囉唆
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?nologo=true&model=turbo`;
 
-        div.innerHTML = `
-            ${cleanText ? `<div style="margin-bottom:8px">${cleanText}</div>` : ''}
-            <div class="ai-image-card" style="border:2px dashed var(--primary-color); padding:8px; border-radius:12px; background:#fff; text-align:center;">
-                <div class="image-loader" style="color:var(--primary-color); padding:10px;">🐰 兔兔正在現場作畫中...</div>
-                <img src="${imageUrl}" style="display:none; width:100%; border-radius:8px;" 
-                     onload="this.style.display='block'; this.previousElementSibling.style.display='none';"
-                     onerror="this.src='https://source.unsplash.com/featured/?${encodeURIComponent(prompt)}'; this.onerror=function(){this.previousElementSibling.innerText='❌ 繪圖伺服器目前掛掉了，請點連結查看：';};">
-                <div style="margin-top:10px; font-size:10px;">
-                    <a href="${imageUrl}" target="_blank" style="color:#ff8fb1; text-decoration:none;">[ 🔗 點此直接查看 / 下載圖片 ]</a>
+            div.innerHTML = `
+                ${cleanText ? `<div>${cleanText}</div>` : ''}
+                <div class="ai-image-card" style="border:2px dashed var(--primary-color); padding:8px; border-radius:12px; background:#fff; margin-top:10px;">
+                    <div class="image-loader" style="color:var(--primary-color); padding:15px; text-align:center;">🥕 兔兔正在連線畫紙中...</div>
+                    <img src="${imageUrl}" style="display:none; width:100%; border-radius:8px;" 
+                         onload="this.style.display='block'; this.previousElementSibling.style.display='none';"
+                         onerror="this.src='https://source.unsplash.com/featured/?${encodeURIComponent(prompt)}';">
                 </div>
-            </div>
-        `;
-    } else {
-        div.innerText = text;
+            `;
+            chatMessages.appendChild(div);
+            return;
+        }
     }
+    div.innerText = text;
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
