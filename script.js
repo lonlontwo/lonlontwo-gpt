@@ -1,16 +1,15 @@
-// --- 1. 設定與初始化 ---
+// --- 兔兔助理：極速繪圖增強版 ---
 const defaultConfig = {
     botName: "兔兔助理",
     apiEndpoint: "/api/chat",
     model: "llama-3.3-70b-versatile",
-    prompt: "你是一個網站助理。當需要畫圖或設計時，請輸出 [DRAW: 英文描述] 標籤。請確保描述詳細一點。",
+    prompt: "你是一個網站助理。當需要畫圖或設計時，請輸出 [DRAW: 英文描述] 格式。描述越詳細越好。",
     chips: "兔兔網在哪裡？,助理能做什麼？,聯絡站長",
     color: "#ff8fb1",
     avatarUrl: "https://raw.githubusercontent.com/lonlontwo/lonlontwo-gpt/main/bunny-avatar.png"
 };
 let CONFIG = { ...defaultConfig };
 
-// --- 2. 獲取配置 ---
 async function syncConfig() {
     try {
         const firebaseUrl = "https://firestore.googleapis.com/v1/projects/green-tract-416604/databases/(default)/documents/configs/bunny-assistant";
@@ -73,42 +72,38 @@ async function handleUserMessage(text) {
         }
     } catch (e) {
         typingIndicator.style.display = 'none';
-        addMessage("❌ 兔兔現在連不到伺服器 (Error 1033)，請檢查網路！", 'bot');
+        addMessage("❌ 兔兔現在不舒服，請檢查後台設定。", 'bot');
     }
 }
 
-// 🎨 核心繪圖渲染邏輯 (這一段最重要)
 function addMessage(text, side) {
     const div = document.createElement('div');
     div.className = `message ${side}-message`;
     
-    if (side === 'bot' && text.includes('[DRAW:')) {
-        const match = text.match(/\[DRAW:\s*(.+?)\]/i);
-        if (match) {
-            const rawPrompt = match[1];
-            const cleanText = text.replace(/\[DRAW:.+?\]/i, '').trim();
-            const seed = Math.floor(Math.random() * 999999);
-            
-            // 自動優化提示詞，讓它看起來更有質感
-            const enhancedPrompt = `${rawPrompt}, cinematic lighting, detailed, masterpiece, 8k resolution`;
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?seed=${seed}&nologo=true&model=flux`;
+    // 🎨 修改後的「必出圖」邏輯
+    const drawRegex = /\[DRAW:\s*(.+?)\]/i;
+    if (side === 'bot' && drawRegex.test(text)) {
+        const match = text.match(drawRegex);
+        const prompt = match[1].replace(/[\[\]]/g, ''); // 淨化提示詞
+        const cleanText = text.replace(drawRegex, '').trim();
+        const seed = Math.floor(Math.random() * 1000000);
+        
+        // 使用 Turbo 模型：速度最快，不容易超時
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?seed=${seed}&nologo=true&model=turbo&width=800&height=800`;
 
-            div.innerHTML = `
-                ${cleanText ? `<div>${cleanText}</div>` : ''}
-                <div class="ai-image-card">
-                    <div class="image-loader">🥕 兔兔正在努力畫圖...</div>
-                    <img src="${imageUrl}" class="ai-img" 
-                        onload="this.style.display='block'; this.previousElementSibling.style.display='none';" 
-                        onerror="this.previousElementSibling.innerText='❌ 哎呀，畫紙濕掉了 (生成失敗)';"
-                    >
-                </div>
-            `;
-            chatMessages.appendChild(div);
-            return div;
-        }
+        div.innerHTML = `
+            ${cleanText ? `<div style="margin-bottom:8px">${cleanText}</div>` : ''}
+            <div class="ai-image-card" style="border: 2px dashed var(--primary-color); padding: 10px; border-radius: 12px; text-align: center; background: #fff;">
+                <div class="image-loader" style="color: var(--primary-color); padding: 20px;">🐰 兔兔畫圖中...</div>
+                <img src="${imageUrl}" style="display:none; width:100%; border-radius: 8px;" 
+                    onload="this.style.display='block'; this.previousElementSibling.style.display='none';"
+                    onerror="this.previousElementSibling.innerText='❌ 畫紙破了，請再試一次！';">
+            </div>
+        `;
+    } else {
+        div.innerText = text;
     }
 
-    div.innerText = text;
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
