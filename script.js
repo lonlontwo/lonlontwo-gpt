@@ -6,9 +6,6 @@ const defaultConfig = {
 };
 let CONFIG = { ...defaultConfig };
 
-const HF_TOKEN = "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";
-const HF_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0";
-
 async function syncConfig() {
     try {
         const resp = await fetch("https://firestore.googleapis.com/v1/projects/green-tract-416604/databases/(default)/documents/configs/bunny-assistant");
@@ -71,17 +68,15 @@ async function handleUserMessage(text) {
 async function drawImage(prompt, imgEl, loaderEl) {
     try {
         loaderEl.innerHTML = '🐰 SDXL 生圖中...<br><small>約需 10-20 秒，請稍候</small>';
-        const resp = await fetch(HF_URL, {
+        const resp = await fetch('/api/draw', {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${HF_TOKEN}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ inputs: prompt })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: prompt })
         });
         if (!resp.ok) {
-            const errText = await resp.text();
-            throw new Error(`HF ${resp.status}: ${errText.slice(0, 150)}`);
+            let errMsg = `伺服器錯誤 ${resp.status}`;
+            try { const err = await resp.json(); errMsg = err.error || errMsg; } catch(e) {}
+            throw new Error(errMsg);
         }
         const blob = await resp.blob();
         imgEl.src = URL.createObjectURL(blob);
@@ -89,7 +84,7 @@ async function drawImage(prompt, imgEl, loaderEl) {
         loaderEl.style.display = 'none';
     } catch (err) {
         console.error("生圖錯誤:", err);
-        loaderEl.innerText = `❌ 生圖失敗：${err.message}`;
+        loaderEl.innerText = `❌ ${err.message}`;
     }
 }
 
