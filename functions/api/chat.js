@@ -40,7 +40,7 @@ export async function onRequestPost(context) {
             gemini: {
                 apiKey:   config.geminiApiKey   || context.env.GEMINI_API_KEY,
                 model:    "gemini-1.5-flash",
-                fallbacks: [],
+                fallbacks: ["gemini-1.5-flash-latest", "gemini-pro"],
                 native: true
             },
             deepseek: {
@@ -130,8 +130,8 @@ export async function onRequestPost(context) {
                 let response, rawData;
 
                 if (provider.native) {
-                    // ── Gemini 原生 API ──
-                    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${provider.apiKey}`;
+                    // ── Gemini 原生 API（v1 正式版）──
+                    const endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${provider.apiKey}`;
 
                     // 轉換 messages → Gemini 格式
                     const systemParts = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
