@@ -130,8 +130,8 @@ export async function onRequestPost(context) {
                 let response, rawData;
 
                 if (provider.native) {
-                    // ── Gemini 原生 API（v1 正式版）──
-                    const endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${provider.apiKey}`;
+                    // ── Gemini 原生 API（v1beta）──
+                    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${provider.apiKey}`;
 
                     // 轉換 messages → Gemini 格式
                     // v1 不支援 systemInstruction，改用 user/model 對話模擬
@@ -170,16 +170,15 @@ export async function onRequestPost(context) {
                         console.log(`✅ [gemini] 使用模型: ${model}`);
                         break;
                     } else if (rawData.error) {
-                        data = { error: rawData.error };
                         const errorMsg = rawData.error.message || '';
                         const isRateLimit = response.status === 429 || errorMsg.includes('quota') || errorMsg.includes('RESOURCE_EXHAUSTED');
                         console.log(`❌ [gemini] 模型 ${model} 錯誤: ${errorMsg}`);
-                        lastError = data;
-                        if (isRateLimit) continue;
+                        // 把每次嘗試的錯誤疊加到訊息裡，方便使用者看到
+                        const prevMsg = lastError?.error?.message || '';
+                        lastError = { error: { message: prevMsg ? `${prevMsg} | [${model}]: ${errorMsg}` : `[${model}]: ${errorMsg}` } };
                         continue; // 嘗試 fallback
                     } else {
-                        data = { error: { message: 'Gemini 回應格式異常: ' + JSON.stringify(rawData).substring(0, 150) } };
-                        lastError = data;
+                        lastError = { error: { message: `[${model}]: Gemini 回應格式異常: ` + JSON.stringify(rawData).substring(0, 100) } };
                         continue;
                     }
 
