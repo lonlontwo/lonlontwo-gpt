@@ -39,8 +39,8 @@ export async function onRequestPost(context) {
             },
             gemini: {
                 apiKey:   config.geminiApiKey   || context.env.GEMINI_API_KEY,
-                model:    "gemini-1.5-flash",
-                fallbacks: ["gemini-1.5-flash-latest", "gemini-pro"],
+                model:    "gemini-2.0-flash",
+                fallbacks: ["gemini-flash-latest", "gemini-2.0-flash-lite"],
                 native: true
             },
             deepseek: {
