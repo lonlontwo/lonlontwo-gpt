@@ -40,8 +40,8 @@ export async function onRequestPost(context) {
             gemini: {
                 apiKey:   config.geminiApiKey   || context.env.GEMINI_API_KEY,
                 endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-                model:    "gemini-1.5-flash",
-                fallbacks: ["gemini-1.5-flash-8b"]
+                model:    "gemini-2.0-flash",
+                fallbacks: ["gemini-1.5-flash", "gemini-1.5-flash-8b"]
             },
             deepseek: {
                 apiKey:   config.deepseekApiKey || context.env.DEEPSEEK_API_KEY,

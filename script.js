@@ -99,8 +99,13 @@ async function handleUserMessage(text) {
         });
         const data = await response.json();
         typingIndicator.style.display = 'none';
-        if (data.choices && data.choices[0].message) addMessage(data.choices[0].message.content, 'bot');
-        else addMessage("❌ 連線出錯，請稍後再試。", 'bot');
+        if (data.choices && data.choices[0].message) {
+            addMessage(data.choices[0].message.content, 'bot');
+        } else if (data.error) {
+            addMessage("❌ API 錯誤：" + (data.error.message || JSON.stringify(data.error)), 'bot');
+        } else {
+            addMessage("❌ 收到未知回應，請檢查後台設定。", 'bot');
+        }
     } catch (e) {
         typingIndicator.style.display = 'none';
         addMessage("❌ 連線出錯，請稍後再試。", 'bot');
