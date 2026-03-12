@@ -17,6 +17,7 @@ export async function onRequestPost(context) {
             if (firebaseData.fields) {
                 const f = firebaseData.fields;
                 config.activeProvider  = f.activeProvider?.stringValue  || "groq";
+                config.userModels      = f.userModels?.stringValue       || "";
                 config.groqApiKey      = f.groqApiKey?.stringValue      || "";
                 config.geminiApiKey    = f.geminiApiKey?.stringValue     || "";
                 config.deepseekApiKey  = f.deepseekApiKey?.stringValue   || "";
@@ -56,7 +57,16 @@ export async function onRequestPost(context) {
             }
         };
 
-        const provider = providerMap[config.activeProvider] || providerMap.groq;
+        // 判斷最終使用的 provider：
+        // 若前台使用者選擇了某個 provider，且它在後台開放清單內，就用使用者選的
+        const requestBody = await context.request.json();
+        const allowedModels = config.userModels ? config.userModels.split(',').map(m => m.trim()).filter(m => m) : [];
+        const requestedProvider = requestBody.provider;
+        let activeProviderKey = config.activeProvider || "groq";
+        if (requestedProvider && allowedModels.includes(requestedProvider) && providerMap[requestedProvider]) {
+            activeProviderKey = requestedProvider;
+        }
+        const provider = providerMap[activeProviderKey] || providerMap.groq;
 
         // 3. 如果沒有 API Key，返回錯誤
         if (!provider.apiKey) {
@@ -100,7 +110,7 @@ export async function onRequestPost(context) {
             enhancedPrompt = enhancedPrompt.slice(0, 4000) + "\n...(已截斷)";
         }
 
-        const requestBody = await context.request.json();
+
 
         // 6. 整理 messages（注入系統提示詞）
         let messages = requestBody.messages || [];

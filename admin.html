@@ -453,6 +453,30 @@
                         <div class="hint">前往 <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--primary-orange);">OpenAI Platform</a> 取得</div>
                     </div>
 
+                    <!-- 開放給使用者選擇的模型 -->
+                    <div class="form-group">
+                        <label>🔓 開放給使用者切換的模型</label>
+                        <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; color:var(--text-main);">
+                                <input type="checkbox" id="userModel-groq" value="groq" style="width:16px; height:16px; accent-color:var(--primary-orange);">
+                                🟢 Groq（Llama，免費）
+                            </label>
+                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; color:var(--text-main);">
+                                <input type="checkbox" id="userModel-gemini" value="gemini" style="width:16px; height:16px; accent-color:var(--primary-orange);">
+                                🔵 Google Gemini（免費額度）
+                            </label>
+                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; color:var(--text-main);">
+                                <input type="checkbox" id="userModel-deepseek" value="deepseek" style="width:16px; height:16px; accent-color:var(--primary-orange);">
+                                🟣 DeepSeek（低價）
+                            </label>
+                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; color:var(--text-main);">
+                                <input type="checkbox" id="userModel-openai" value="openai" style="width:16px; height:16px; accent-color:var(--primary-orange);">
+                                🟠 OpenAI（GPT，付費）
+                            </label>
+                        </div>
+                        <div class="hint" style="margin-top:8px;">勾選 2 個或以上，前台才會顯示模型切換選單給使用者。</div>
+                    </div>
+
                     <div class="form-group">
                         <label>API Key 到期日期</label>
                         <input type="date" id="keyExpiryDate">
@@ -533,6 +557,12 @@
                     // 模型商選擇
                     if (data.activeProvider) document.getElementById('activeProvider').value = data.activeProvider;
                     updateProviderHint();
+                    // 開放給使用者的模型勾選
+                    const userModels = (data.userModels || '').split(',').map(m => m.trim()).filter(m => m);
+                    ['groq', 'gemini', 'deepseek', 'openai'].forEach(m => {
+                        const cb = document.getElementById('userModel-' + m);
+                        if (cb) cb.checked = userModels.includes(m);
+                    });
                     updateAvatarPreview(data.avatarUrl);
                     updateExpiryTimer(data.keyExpiryDate);
                     updateKnowledgeCount(data.knowledgeUrls);
@@ -548,6 +578,9 @@
             const provider = document.getElementById('activeProvider').value;
             const config = {
                 activeProvider: provider,
+                userModels: ['groq', 'gemini', 'deepseek', 'openai']
+                    .filter(m => document.getElementById('userModel-' + m)?.checked)
+                    .join(','),
                 groqApiKey: document.getElementById('groqApiKey').value.trim(),
                 geminiApiKey: document.getElementById('geminiApiKey').value.trim(),
                 deepseekApiKey: document.getElementById('deepseekApiKey').value.trim(),
