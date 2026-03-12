@@ -177,8 +177,13 @@ export async function onRequestPost(context) {
                 } else if (provider.isCloudflare) {
                     // ── Cloudflare Workers AI ──
                     if (!context.env.AI) {
-                        lastError = { error: { message: '尚未在 Cloudflare Pages 綁定 AI 變數！請到後台設定綁定。' } };
-                        break; // 沒綁定就不需要 fallback 了
+                        lastError = { error: { message: '尚未綁定！請到設定 > 函數 (Functions) 綁定 AI 變數。' } };
+                        break;
+                    }
+                    if (typeof context.env.AI.run !== 'function') {
+                        const typeInfo = typeof context.env.AI;
+                        lastError = { error: { message: `AI 變數設定錯位置了！(目前是 ${typeInfo}) 請在「AI 繫結 (Workers AI)」新增，而不是「環境變數」。` } };
+                        break;
                     }
 
                     const aiResponse = await context.env.AI.run(model, { messages });
