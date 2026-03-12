@@ -39,9 +39,9 @@ export async function onRequestPost(context) {
             },
             gemini: {
                 apiKey:   config.geminiApiKey   || context.env.GEMINI_API_KEY,
-                endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                 model:    "gemini-2.0-flash",
-                fallbacks: ["gemini-1.5-flash", "gemini-1.5-flash-8b"]
+                fallbacks: ["gemini-1.5-flash", "gemini-2.0-flash-lite"],
+                native: true   // 使用原生 Gemini API，非 OpenAI 相容層
             },
             deepseek: {
                 apiKey:   config.deepseekApiKey || context.env.DEEPSEEK_API_KEY,
@@ -127,58 +127,80 @@ export async function onRequestPost(context) {
 
         for (const model of modelsToTry) {
             try {
-                const response = await fetch(provider.endpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${provider.apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: messages,
-                        temperature: requestBody.temperature || 0.7,
-                        max_tokens: requestBody.max_tokens || 512
-                    })
-                });
+                let response, rawData;
 
-                data = await response.json();
+                if (provider.native) {
+                    // ── Gemini 原生 API ──
+                    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${provider.apiKey}`;
 
-                // 修正：Gemini 有時回傳陣列格式錯誤 [{error:{...}}]
-                if (Array.isArray(data)) {
-                    data = data[0] || { error: { message: "Gemini 回傳空陣列" } };
-                }
+                    // 轉換 messages → Gemini 格式
+                    const systemParts = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
+                    const geminiContents = messages
+                        .filter(m => m.role !== 'system')
+                        .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
 
-                const errorMsg = data.error?.message || "";
-                const isRateLimited = response.status === 429 ||
-                    errorMsg.includes('Rate limit') ||
-                    errorMsg.includes('rate_limit') ||
-                    errorMsg.includes('TPM') ||
-                    errorMsg.includes('RPM') ||
-                    errorMsg.includes('quota');
+                    const geminiBody = { contents: geminiContents };
+                    if (systemParts) geminiBody.systemInstruction = { parts: [{ text: systemParts }] };
+                    geminiBody.generationConfig = { temperature: requestBody.temperature || 0.7, maxOutputTokens: requestBody.max_tokens || 512 };
 
-                if (response.ok && data.choices?.length > 0) {
-                    console.log(`✅ [${activeProviderKey}] 使用模型: ${model}`);
-                    break;
-                }
+                    response = await fetch(endpoint, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(geminiBody)
+                    });
+                    rawData = await response.json();
 
-                if (isRateLimited) {
-                    console.log(`⚠️ 模型 ${model} 被限速，嘗試備用...`);
-                    lastError = data;
+                    // 轉換 Gemini 回應 → OpenAI 格式
+                    if (rawData.candidates?.[0]?.content?.parts) {
+                        data = { choices: [{ message: { role: 'assistant', content: rawData.candidates[0].content.parts[0].text } }] };
+                        console.log(`✅ [gemini] 使用模型: ${model}`);
+                        break;
+                    } else if (rawData.error) {
+                        data = { error: rawData.error };
+                        const errorMsg = rawData.error.message || '';
+                        const isRateLimit = response.status === 429 || errorMsg.includes('quota') || errorMsg.includes('RESOURCE_EXHAUSTED');
+                        console.log(`❌ [gemini] 模型 ${model} 錯誤: ${errorMsg}`);
+                        lastError = data;
+                        if (isRateLimit) continue;
+                        continue; // 嘗試 fallback
+                    } else {
+                        data = { error: { message: 'Gemini 回應格式異常: ' + JSON.stringify(rawData).substring(0, 150) } };
+                        lastError = data;
+                        continue;
+                    }
+
+                } else {
+                    // ── OpenAI 相容格式（Groq / DeepSeek / OpenAI）──
+                    response = await fetch(provider.endpoint, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${provider.apiKey}` },
+                        body: JSON.stringify({ model, messages, temperature: requestBody.temperature || 0.7, max_tokens: requestBody.max_tokens || 512 })
+                    });
+                    rawData = await response.json();
+                    if (Array.isArray(rawData)) rawData = rawData[0] || { error: { message: '空回應' } };
+
+                    const errorMsg = rawData.error?.message || '';
+                    const isRateLimited = response.status === 429 || errorMsg.includes('Rate limit') || errorMsg.includes('rate_limit') || errorMsg.includes('TPM') || errorMsg.includes('RPM') || errorMsg.includes('quota');
+
+                    if (response.ok && rawData.choices?.length > 0) {
+                        data = rawData;
+                        console.log(`✅ [${activeProviderKey}] 使用模型: ${model}`);
+                        break;
+                    }
+                    if (isRateLimited) { console.log(`⚠️ ${model} 被限速`); lastError = rawData; continue; }
+                    console.log(`❌ ${model} 錯誤: ${errorMsg}`);
+                    lastError = rawData;
                     continue;
                 }
 
-                console.log(`❌ 模型 ${model} 錯誤: ${errorMsg}`);
-                lastError = data;
-                continue; // 繼續嘗試下一個 fallback
-
             } catch (e) {
-                console.log(`❌ 模型 ${model} 失敗: ${e.message}`);
+                console.log(`❌ 模型 ${model} 例外: ${e.message}`);
                 lastError = { error: { message: e.message } };
             }
         }
 
         if (!data || (!data.choices && !data.error)) {
-            data = lastError || { error: { message: "所有模型都暫時無法使用，請稍後再試。" } };
+            data = lastError || { error: { message: '所有模型都暫時無法使用，請稍後再試。' } };
         }
 
         return new Response(JSON.stringify(data), {
