@@ -40,8 +40,8 @@ export async function onRequestPost(context) {
             gemini: {
                 apiKey:   config.geminiApiKey   || context.env.GEMINI_API_KEY,
                 model:    "gemini-1.5-flash",
-                fallbacks: ["gemini-1.5-flash-8b"],
-                native: true   // 使用原生 Gemini API，非 OpenAI 相容層
+                fallbacks: [],
+                native: true
             },
             deepseek: {
                 apiKey:   config.deepseekApiKey || context.env.DEEPSEEK_API_KEY,
