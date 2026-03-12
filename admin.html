@@ -390,17 +390,69 @@
                 <div class="card">
                     <h2>🔑 認證與安全性</h2>
                     <div class="warning-box">
-                        <strong>安全性提醒：</strong> Groq API Key 將加密儲存於雲端，請確保不要外洩。
+                        <strong>安全性提醒：</strong> API Key 將加密儲存於雲端，請確保不要外洩。
                     </div>
+
+                    <!-- 模型商選擇 -->
                     <div class="form-group">
+                        <label>🤖 使用模型商</label>
+                        <select id="activeProvider" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); padding:12px 15px; border-radius:6px; font-size:0.95rem; outline:none; cursor:pointer;" onchange="updateProviderHint()">
+                            <option value="groq">Groq（預設，免費）</option>
+                            <option value="gemini">Google Gemini（免費額度）</option>
+                            <option value="deepseek">DeepSeek（低價）</option>
+                            <option value="openai">OpenAI（GPT-4o 系列）</option>
+                        </select>
+                        <div class="hint" id="providerHint" style="margin-top:8px;"></div>
+                    </div>
+
+                    <!-- Groq -->
+                    <div class="form-group" id="group-groq">
                         <label>Groq API 金鑰</label>
                         <div class="api-key-container">
                             <input type="password" id="groqApiKey" placeholder="gsk_...">
-                            <button class="toggle-visibility" onclick="toggleKeyVisibility()">
+                            <button class="toggle-visibility" onclick="toggleKeyVisibility('groqApiKey', this)">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
+                        <div class="hint">前往 <a href="https://console.groq.com/keys" target="_blank" style="color:var(--primary-orange);">console.groq.com</a> 取得</div>
                     </div>
+
+                    <!-- Gemini -->
+                    <div class="form-group" id="group-gemini" style="display:none;">
+                        <label>Google Gemini API 金鑰</label>
+                        <div class="api-key-container">
+                            <input type="password" id="geminiApiKey" placeholder="AIza...">
+                            <button class="toggle-visibility" onclick="toggleKeyVisibility('geminiApiKey', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="hint">前往 <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--primary-orange);">Google AI Studio</a> 取得</div>
+                    </div>
+
+                    <!-- DeepSeek -->
+                    <div class="form-group" id="group-deepseek" style="display:none;">
+                        <label>DeepSeek API 金鑰</label>
+                        <div class="api-key-container">
+                            <input type="password" id="deepseekApiKey" placeholder="sk-...">
+                            <button class="toggle-visibility" onclick="toggleKeyVisibility('deepseekApiKey', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="hint">前往 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:var(--primary-orange);">DeepSeek Platform</a> 取得</div>
+                    </div>
+
+                    <!-- OpenAI -->
+                    <div class="form-group" id="group-openai" style="display:none;">
+                        <label>OpenAI API 金鑰</label>
+                        <div class="api-key-container">
+                            <input type="password" id="openaiApiKey" placeholder="sk-...">
+                            <button class="toggle-visibility" onclick="toggleKeyVisibility('openaiApiKey', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="hint">前往 <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--primary-orange);">OpenAI Platform</a> 取得</div>
+                    </div>
+
                     <div class="form-group">
                         <label>API Key 到期日期</label>
                         <input type="date" id="keyExpiryDate">
@@ -465,7 +517,6 @@
                 const snap = await getDoc(doc(db, "configs", "bunny-assistant"));
                 if (snap.exists()) {
                     const data = snap.data();
-                    document.getElementById('groqApiKey').value = data.groqApiKey || '';
                     document.getElementById('botName').value = data.botName || '兔兔助理';
                     document.getElementById('prompt').value = data.prompt || '';
                     document.getElementById('chips').value = data.chips || '';
@@ -474,11 +525,17 @@
                     document.getElementById('knowledgeUrls').value = data.knowledgeUrls || '';
                     document.getElementById('avatarUrl').value = data.avatarUrl || '';
                     document.getElementById('keyExpiryDate').value = data.keyExpiryDate || '';
-
+                    // 多模型 Key
+                    document.getElementById('groqApiKey').value = data.groqApiKey || '';
+                    document.getElementById('geminiApiKey').value = data.geminiApiKey || '';
+                    document.getElementById('deepseekApiKey').value = data.deepseekApiKey || '';
+                    document.getElementById('openaiApiKey').value = data.openaiApiKey || '';
+                    // 模型商選擇
+                    if (data.activeProvider) document.getElementById('activeProvider').value = data.activeProvider;
+                    updateProviderHint();
                     updateAvatarPreview(data.avatarUrl);
                     updateExpiryTimer(data.keyExpiryDate);
                     updateKnowledgeCount(data.knowledgeUrls);
-
                     showStatus('✅ 設定載入成功！', 'success');
                 }
             } catch (e) {
@@ -488,8 +545,13 @@
 
         // 儲存設定
         window.saveConfig = async function () {
+            const provider = document.getElementById('activeProvider').value;
             const config = {
+                activeProvider: provider,
                 groqApiKey: document.getElementById('groqApiKey').value.trim(),
+                geminiApiKey: document.getElementById('geminiApiKey').value.trim(),
+                deepseekApiKey: document.getElementById('deepseekApiKey').value.trim(),
+                openaiApiKey: document.getElementById('openaiApiKey').value.trim(),
                 botName: document.getElementById('botName').value.trim() || '兔兔助理',
                 prompt: document.getElementById('prompt').value.trim(),
                 chips: document.getElementById('chips').value.trim(),
@@ -499,13 +561,11 @@
                 keyExpiryDate: document.getElementById('keyExpiryDate').value,
                 updatedAt: new Date().toISOString()
             };
-
-            if (!config.groqApiKey) {
-                showStatus('❌ 請填寫 Groq API Key！', 'error');
-                switchTab('api');
+            const keyMap = { groq: 'groqApiKey', gemini: 'geminiApiKey', deepseek: 'deepseekApiKey', openai: 'openaiApiKey' };
+            if (!config[keyMap[provider]]) {
+                showStatus('❌ 請填寫 ' + provider.toUpperCase() + ' API Key！', 'error');
                 return;
             }
-
             try {
                 await setDoc(doc(db, "configs", "bunny-assistant"), config, { merge: true });
                 showStatus('✅ 設定儲存成功！', 'success');
@@ -555,14 +615,28 @@
         document.getElementById('color').addEventListener('input', (e) => document.getElementById('colorValue').textContent = e.target.value);
         document.getElementById('keyExpiryDate').addEventListener('change', (e) => updateExpiryTimer(e.target.value));
 
-        window.toggleKeyVisibility = function () {
-            const input = document.getElementById('groqApiKey');
-            const icon = event.currentTarget.querySelector('i');
+        window.toggleKeyVisibility = function (inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
             if (input.type === 'password') {
                 input.type = 'text'; icon.className = 'fas fa-eye-slash';
             } else {
                 input.type = 'password'; icon.className = 'fas fa-eye';
             }
+        };
+
+        const providerHints = {
+            groq: '🟢 免費方案，速度快，適合日常使用。模型：llama-3.3-70b-versatile',
+            gemini: '🔵 Google AI Studio 免費額度充足，模型：gemini-1.5-flash',
+            deepseek: '🟣 低成本高效能，適合中文場景。模型：deepseek-chat',
+            openai: '🟠 頂級 GPT 系列，品質最高但需付費。模型：gpt-4o-mini'
+        };
+        window.updateProviderHint = function () {
+            const provider = document.getElementById('activeProvider').value;
+            document.getElementById('providerHint').textContent = providerHints[provider] || '';
+            ['groq', 'gemini', 'deepseek', 'openai'].forEach(p => {
+                document.getElementById('group-' + p).style.display = (p === provider) ? 'block' : 'none';
+            });
         };
 
         window.closeAdmin = function () {
