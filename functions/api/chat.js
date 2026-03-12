@@ -8,87 +8,101 @@ export async function onRequestPost(context) {
 
     try {
         // 1. 從 Firebase 讀取設定
-        let GROQ_API_KEY = null;
-        let knowledgeUrls = "";
-        let systemPrompt = "";
-
+        let config = {};
         try {
             const firebaseUrl = "https://firestore.googleapis.com/v1/projects/green-tract-416604/databases/(default)/documents/configs/bunny-assistant";
             const firebaseResp = await fetch(firebaseUrl);
             const firebaseData = await firebaseResp.json();
 
             if (firebaseData.fields) {
-                if (firebaseData.fields.groqApiKey) {
-                    GROQ_API_KEY = firebaseData.fields.groqApiKey.stringValue;
-                }
-                if (firebaseData.fields.knowledgeUrls) {
-                    knowledgeUrls = firebaseData.fields.knowledgeUrls.stringValue;
-                }
-                if (firebaseData.fields.prompt) {
-                    systemPrompt = firebaseData.fields.prompt.stringValue;
-                }
+                const f = firebaseData.fields;
+                config.activeProvider  = f.activeProvider?.stringValue  || "groq";
+                config.groqApiKey      = f.groqApiKey?.stringValue      || "";
+                config.geminiApiKey    = f.geminiApiKey?.stringValue     || "";
+                config.deepseekApiKey  = f.deepseekApiKey?.stringValue   || "";
+                config.openaiApiKey    = f.openaiApiKey?.stringValue     || "";
+                config.knowledgeUrls   = f.knowledgeUrls?.stringValue    || "";
+                config.systemPrompt    = f.prompt?.stringValue           || "";
             }
         } catch (e) {
             console.log("Firebase fetch failed:", e.message);
         }
 
-        // 2. 如果 Firebase 沒有 API Key，就用環境變數
-        if (!GROQ_API_KEY) {
-            GROQ_API_KEY = context.env.GROQ_API_KEY;
-        }
+        // 2. 決定使用哪個模型商的設定
+        const providerMap = {
+            groq: {
+                apiKey:   config.groqApiKey     || context.env.GROQ_API_KEY,
+                endpoint: "https://api.groq.com/openai/v1/chat/completions",
+                model:    "llama-3.3-70b-versatile",
+                fallbacks: ["llama-3.1-8b-instant", "gemma2-9b-it", "llama3-8b-8192"]
+            },
+            gemini: {
+                apiKey:   config.geminiApiKey   || context.env.GEMINI_API_KEY,
+                endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+                model:    "gemini-1.5-flash",
+                fallbacks: ["gemini-1.5-flash-8b"]
+            },
+            deepseek: {
+                apiKey:   config.deepseekApiKey || context.env.DEEPSEEK_API_KEY,
+                endpoint: "https://api.deepseek.com/v1/chat/completions",
+                model:    "deepseek-chat",
+                fallbacks: []
+            },
+            openai: {
+                apiKey:   config.openaiApiKey   || context.env.OPENAI_API_KEY,
+                endpoint: "https://api.openai.com/v1/chat/completions",
+                model:    "gpt-4o-mini",
+                fallbacks: ["gpt-3.5-turbo"]
+            }
+        };
 
-        // 3. 如果都沒有，返回錯誤
-        if (!GROQ_API_KEY) {
+        const provider = providerMap[config.activeProvider] || providerMap.groq;
+
+        // 3. 如果沒有 API Key，返回錯誤
+        if (!provider.apiKey) {
             return new Response(JSON.stringify({
-                error: { message: "API Key 未設定！請在兔兔後台設定 Groq API Key。" }
+                error: { message: `API Key 未設定（模型商：${config.activeProvider}）！請在後台 API 金鑰分頁填入對應的 Key。` }
             }), {
                 status: 500,
                 headers: { "Content-Type": "application/json", ...corsHeaders }
             });
         }
 
-        // 4. 抓取知識庫內容 (大幅限制大小以避免 TPM 超限)
+        // 4. 抓取知識庫內容
         let knowledgeContent = "";
-        if (knowledgeUrls) {
-            const urls = knowledgeUrls.split('\n').map(u => u.trim()).filter(u => u);
+        if (config.knowledgeUrls) {
+            const urls = config.knowledgeUrls.split('\n').map(u => u.trim()).filter(u => u);
             const fetchPromises = urls.map(async (url) => {
                 try {
                     const resp = await fetch(url);
                     if (resp.ok) {
                         const text = await resp.text();
-                        // 每個檔案限制 1500 字元
-                        return text.slice(0, 1500);
+                        return text.slice(0, 1500); // 每個檔案限制 1500 字元
                     }
                 } catch (e) {
                     console.log(`Failed to fetch ${url}:`, e.message);
                 }
                 return "";
             });
-
             const contents = await Promise.all(fetchPromises);
             knowledgeContent = contents.filter(c => c).join('\n\n---\n\n');
-
-            // 總量限制 3000 字元
             if (knowledgeContent.length > 3000) {
                 knowledgeContent = knowledgeContent.slice(0, 3000) + "\n...(內容已截斷)";
             }
         }
 
         // 5. 建立增強的系統提示詞
-        let enhancedPrompt = systemPrompt || "你是一個友善的網站助理。";
-
+        let enhancedPrompt = config.systemPrompt || "你是一個友善的網站助理。";
         if (knowledgeContent) {
             enhancedPrompt += `\n\n以下是網站的資料，請根據這些資料來回答用戶的問題：\n\n${knowledgeContent}`;
         }
-
-        // 限制總 prompt 長度
         if (enhancedPrompt.length > 4000) {
             enhancedPrompt = enhancedPrompt.slice(0, 4000) + "\n...(已截斷)";
         }
 
         const requestBody = await context.request.json();
 
-        // 6. 替換系統提示詞
+        // 6. 整理 messages（注入系統提示詞）
         let messages = requestBody.messages || [];
         if (messages.length > 0 && messages[0].role === "system") {
             messages[0].content = enhancedPrompt;
@@ -96,59 +110,47 @@ export async function onRequestPost(context) {
             messages = [{ role: "system", content: enhancedPrompt }, ...messages];
         }
 
-        // 7. 呼叫 Groq API (含 Fallback 機制)
-        const primaryModel = requestBody.model || "llama-3.3-70b-versatile";
-        const fallbackModels = [
-            "llama-3.1-8b-instant",      // 8B 快速模型
-            "mixtral-8x7b-32768",        // Mixtral MoE 模型
-            "gemma2-9b-it",              // Google Gemma2 9B
-            "llama3-8b-8192"             // Llama3 8B (舊版穩定)
-        ];
-
-        const modelsToTry = [primaryModel, ...fallbackModels];
+        // 7. 呼叫 API（含 Fallback 機制）
+        const modelsToTry = [requestBody.model || provider.model, ...provider.fallbacks];
         let data = null;
         let lastError = null;
 
         for (const model of modelsToTry) {
             try {
-                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                const response = await fetch(provider.endpoint, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${GROQ_API_KEY}`
+                        "Authorization": `Bearer ${provider.apiKey}`
                     },
                     body: JSON.stringify({
                         model: model,
                         messages: messages,
                         temperature: requestBody.temperature || 0.7,
-                        max_tokens: requestBody.max_tokens || 512  // 減少 token 用量
+                        max_tokens: requestBody.max_tokens || 512
                     })
                 });
 
                 data = await response.json();
 
-                // 檢查是否為速率限制錯誤 (HTTP 429 或 body 中的 rate limit 訊息)
                 const isRateLimited = response.status === 429 ||
-                    (data.error && data.error.message &&
+                    (data.error?.message &&
                         (data.error.message.includes('Rate limit') ||
-                            data.error.message.includes('rate_limit') ||
-                            data.error.message.includes('TPM') ||
-                            data.error.message.includes('RPM')));
+                         data.error.message.includes('rate_limit') ||
+                         data.error.message.includes('TPM') ||
+                         data.error.message.includes('RPM')));
 
-                // 如果成功且有回覆，跳出迴圈
-                if (response.ok && data.choices && data.choices.length > 0) {
-                    console.log(`✅ 使用模型: ${model}`);
+                if (response.ok && data.choices?.length > 0) {
+                    console.log(`✅ [${config.activeProvider}] 使用模型: ${model}`);
                     break;
                 }
 
-                // 如果是速率限制，嘗試下一個模型
                 if (isRateLimited) {
-                    console.log(`⚠️ 模型 ${model} 被限速，嘗試備用模型...`);
+                    console.log(`⚠️ 模型 ${model} 被限速，嘗試備用...`);
                     lastError = data;
                     continue;
                 }
 
-                // 其他錯誤直接返回
                 console.log(`❌ 模型 ${model} 錯誤: ${data.error?.message}`);
                 break;
 
@@ -158,24 +160,18 @@ export async function onRequestPost(context) {
             }
         }
 
-        // 如果所有模型都失敗
         if (!data || (data.error && !data.choices)) {
             data = lastError || { error: { message: "所有模型都暫時無法使用，請稍後再試。" } };
         }
 
         return new Response(JSON.stringify(data), {
-            headers: {
-                "Content-Type": "application/json",
-                ...corsHeaders
-            }
+            headers: { "Content-Type": "application/json", ...corsHeaders }
         });
+
     } catch (error) {
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
-            headers: {
-                "Content-Type": "application/json",
-                ...corsHeaders
-            }
+            headers: { "Content-Type": "application/json", ...corsHeaders }
         });
     }
 }
