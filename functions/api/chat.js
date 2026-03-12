@@ -20,8 +20,6 @@ export async function onRequestPost(context) {
                 config.userModels      = f.userModels?.stringValue       || "";
                 config.groqApiKey      = f.groqApiKey?.stringValue      || "";
                 config.geminiApiKey    = f.geminiApiKey?.stringValue     || "";
-                config.deepseekApiKey  = f.deepseekApiKey?.stringValue   || "";
-                config.openaiApiKey    = f.openaiApiKey?.stringValue     || "";
                 config.knowledgeUrls   = f.knowledgeUrls?.stringValue    || "";
                 config.systemPrompt    = f.prompt?.stringValue           || "";
             }
@@ -43,17 +41,11 @@ export async function onRequestPost(context) {
                 fallbacks: ["gemini-flash-latest", "gemini-2.0-flash-lite"],
                 native: true
             },
-            deepseek: {
-                apiKey:   config.deepseekApiKey || context.env.DEEPSEEK_API_KEY,
-                endpoint: "https://api.deepseek.com/v1/chat/completions",
-                model:    "deepseek-chat",
-                fallbacks: []
-            },
-            openai: {
-                apiKey:   config.openaiApiKey   || context.env.OPENAI_API_KEY,
-                endpoint: "https://api.openai.com/v1/chat/completions",
-                model:    "gpt-4o-mini",
-                fallbacks: ["gpt-3.5-turbo"]
+            cloudflare: {
+                apiKey:   "no-key",  // Cloudflare 直接綁定，不需要 API Key
+                model:    "@cf/meta/llama-3.1-8b-instruct",
+                fallbacks: ["@cf/meta/llama-3-8b-instruct", "@cf/mistral/mistral-7b-instruct-v0.1"],
+                isCloudflare: true
             }
         };
 
@@ -68,10 +60,10 @@ export async function onRequestPost(context) {
         }
         const provider = providerMap[activeProviderKey] || providerMap.groq;
 
-        // 3. 如果沒有 API Key，返回錯誤
-        if (!provider.apiKey) {
+        // 3. 如果沒有 API Key（Cloudflare 除外），返回錯誤
+        if (!provider.isCloudflare && !provider.apiKey) {
             return new Response(JSON.stringify({
-                error: { message: `API Key 未設定（模型商：${config.activeProvider}）！請在後台 API 金鑰分頁填入對應的 Key。` }
+                error: { message: `API Key 未設定（模型商：${activeProviderKey}）！請在後台 API 金鑰分頁填入對應的 Key。` }
             }), {
                 status: 500,
                 headers: { "Content-Type": "application/json", ...corsHeaders }
@@ -179,6 +171,26 @@ export async function onRequestPost(context) {
                         continue; // 嘗試 fallback
                     } else {
                         lastError = { error: { message: `[${model}]: Gemini 回應格式異常: ` + JSON.stringify(rawData).substring(0, 100) } };
+                        continue;
+                    }
+
+                } else if (provider.isCloudflare) {
+                    // ── Cloudflare Workers AI ──
+                    if (!context.env.AI) {
+                        lastError = { error: { message: '尚未在 Cloudflare Pages 綁定 AI 變數！請到後台設定綁定。' } };
+                        break; // 沒綁定就不需要 fallback 了
+                    }
+
+                    const aiResponse = await context.env.AI.run(model, { messages });
+                    // Cloudflare 會回傳 { response: "回答..." }，轉為 OpenAI 格式
+                    if (aiResponse && aiResponse.response) {
+                        data = { choices: [{ message: { role: 'assistant', content: aiResponse.response } }] };
+                        console.log(`✅ [cloudflare] 使用模型: ${model}`);
+                        break;
+                    } else {
+                        const errorMsg = aiResponse.error || '不明的 Cloudflare AI 錯誤';
+                        console.log(`❌ [cloudflare] 模型 ${model} 錯誤: ${errorMsg}`);
+                        lastError = { error: { message: `[${model}]: ${errorMsg}` } };
                         continue;
                     }
 

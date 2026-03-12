@@ -8,10 +8,9 @@ let CONFIG = { ...defaultConfig };
 let selectedProvider = null; // 使用者目前選擇的模型
 
 const modelLabels = {
-    groq:     "🟢 Groq (Llama)",
-    gemini:   "🔵 Google Gemini",
-    deepseek: "🟣 DeepSeek",
-    openai:   "🟠 OpenAI (GPT)"
+    groq:       "🟢 Groq (Llama)",
+    gemini:     "🔵 Google Gemini",
+    cloudflare: "☁️ Cloudflare AI"
 };
 
 async function syncConfig() {

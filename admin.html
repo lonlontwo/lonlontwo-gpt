@@ -399,8 +399,7 @@
                         <select id="activeProvider" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); padding:12px 15px; border-radius:6px; font-size:0.95rem; outline:none; cursor:pointer;" onchange="updateProviderHint()">
                             <option value="groq">Groq（預設，免費）</option>
                             <option value="gemini">Google Gemini（免費額度）</option>
-                            <option value="deepseek">DeepSeek（低價）</option>
-                            <option value="openai">OpenAI（GPT-4o 系列）</option>
+                            <option value="cloudflare">Cloudflare AI（完全免費，無需 Key）</option>
                         </select>
                         <div class="hint" id="providerHint" style="margin-top:8px;"></div>
                     </div>
@@ -429,28 +428,17 @@
                         <div class="hint">前往 <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--primary-orange);">Google AI Studio</a> 取得</div>
                     </div>
 
-                    <!-- DeepSeek -->
-                    <div class="form-group" id="group-deepseek" style="display:none;">
-                        <label>DeepSeek API 金鑰</label>
-                        <div class="api-key-container">
-                            <input type="password" id="deepseekApiKey" placeholder="sk-...">
-                            <button class="toggle-visibility" onclick="toggleKeyVisibility('deepseekApiKey', this)">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                    <!-- Cloudflare AI -->
+                    <div class="form-group" id="group-cloudflare" style="display:none;">
+                        <label>☁️ Cloudflare Workers AI</label>
+                        <div style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:8px; padding:14px; font-size:0.88rem; color:var(--text-sub); line-height:1.7;">
+                            🎉 <strong style="color:var(--text-main)">完全免費，不需要 API Key！</strong><br>
+                            使用前需在 Cloudflare Pages 後台開啟 AI 綁定：<br>
+                            1️⃣ 進入 <a href="https://dash.cloudflare.com" target="_blank" style="color:var(--primary-orange);">Cloudflare 後台</a><br>
+                            2️⃣ lonlontwo-gpt → 設定 → Functions → AI 綁定<br>
+                            3️⃣ 新增綁定，變數名稱填入 <strong style="color:var(--text-main);">AI</strong><br>
+                            4️⃣ 完成！每日10,000 次免費呼叫。
                         </div>
-                        <div class="hint">前往 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:var(--primary-orange);">DeepSeek Platform</a> 取得</div>
-                    </div>
-
-                    <!-- OpenAI -->
-                    <div class="form-group" id="group-openai" style="display:none;">
-                        <label>OpenAI API 金鑰</label>
-                        <div class="api-key-container">
-                            <input type="password" id="openaiApiKey" placeholder="sk-...">
-                            <button class="toggle-visibility" onclick="toggleKeyVisibility('openaiApiKey', this)">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <div class="hint">前往 <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--primary-orange);">OpenAI Platform</a> 取得</div>
                     </div>
 
                     <!-- 開放給使用者選擇的模型 -->
@@ -466,12 +454,8 @@
                                 🔵 Google Gemini（免費額度）
                             </label>
                             <label style="display:flex; align-items:center; gap:10px; cursor:pointer; color:var(--text-main);">
-                                <input type="checkbox" id="userModel-deepseek" value="deepseek" style="width:16px; height:16px; accent-color:var(--primary-orange);">
-                                🟣 DeepSeek（低價）
-                            </label>
-                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; color:var(--text-main);">
-                                <input type="checkbox" id="userModel-openai" value="openai" style="width:16px; height:16px; accent-color:var(--primary-orange);">
-                                🟠 OpenAI（GPT，付費）
+                                <input type="checkbox" id="userModel-cloudflare" value="cloudflare" style="width:16px; height:16px; accent-color:var(--primary-orange);">
+                                ☁️ Cloudflare AI（完全免費）
                             </label>
                         </div>
                         <div class="hint" style="margin-top:8px;">勾選 2 個或以上，前台才會顯示模型切換選單給使用者。</div>
@@ -559,7 +543,7 @@
                     updateProviderHint();
                     // 開放給使用者的模型勾選
                     const userModels = (data.userModels || '').split(',').map(m => m.trim()).filter(m => m);
-                    ['groq', 'gemini', 'deepseek', 'openai'].forEach(m => {
+                    ['groq', 'gemini', 'cloudflare'].forEach(m => {
                         const cb = document.getElementById('userModel-' + m);
                         if (cb) cb.checked = userModels.includes(m);
                     });
@@ -578,13 +562,11 @@
             const provider = document.getElementById('activeProvider').value;
             const config = {
                 activeProvider: provider,
-                userModels: ['groq', 'gemini', 'deepseek', 'openai']
+                userModels: ['groq', 'gemini', 'cloudflare']
                     .filter(m => document.getElementById('userModel-' + m)?.checked)
                     .join(','),
                 groqApiKey: document.getElementById('groqApiKey').value.trim(),
                 geminiApiKey: document.getElementById('geminiApiKey').value.trim(),
-                deepseekApiKey: document.getElementById('deepseekApiKey').value.trim(),
-                openaiApiKey: document.getElementById('openaiApiKey').value.trim(),
                 botName: document.getElementById('botName').value.trim() || '兔兔助理',
                 prompt: document.getElementById('prompt').value.trim(),
                 chips: document.getElementById('chips').value.trim(),
@@ -594,8 +576,8 @@
                 keyExpiryDate: document.getElementById('keyExpiryDate').value,
                 updatedAt: new Date().toISOString()
             };
-            const keyMap = { groq: 'groqApiKey', gemini: 'geminiApiKey', deepseek: 'deepseekApiKey', openai: 'openaiApiKey' };
-            if (!config[keyMap[provider]]) {
+            const keyMap = { groq: 'groqApiKey', gemini: 'geminiApiKey' };
+            if (provider !== 'cloudflare' && !config[keyMap[provider]]) {
                 showStatus('❌ 請填寫 ' + provider.toUpperCase() + ' API Key！', 'error');
                 return;
             }
@@ -660,14 +642,13 @@
 
         const providerHints = {
             groq: '🟢 免費方案，速度快，適合日常使用。模型：llama-3.3-70b-versatile',
-            gemini: '🔵 Google AI Studio 免費額度充足，模型：gemini-1.5-flash',
-            deepseek: '🟣 低成本高效能，適合中文場景。模型：deepseek-chat',
-            openai: '🟠 頂級 GPT 系列，品質最高但需付費。模型：gpt-4o-mini'
+            gemini: '🔵 Google AI Studio 免費額度充足，模型：gemini-2.0-flash',
+            cloudflare: '☁️ Cloudflare Workers AI，完全免費，不需 API Key。模型：llama-3.1-8b-instruct'
         };
         window.updateProviderHint = function () {
             const provider = document.getElementById('activeProvider').value;
             document.getElementById('providerHint').textContent = providerHints[provider] || '';
-            ['groq', 'gemini', 'deepseek', 'openai'].forEach(p => {
+            ['groq', 'gemini', 'cloudflare'].forEach(p => {
                 document.getElementById('group-' + p).style.display = (p === provider) ? 'block' : 'none';
             });
         };
