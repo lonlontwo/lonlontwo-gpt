@@ -134,14 +134,28 @@ export async function onRequestPost(context) {
                     const endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${provider.apiKey}`;
 
                     // 轉換 messages → Gemini 格式
+                    // v1 不支援 systemInstruction，改用 user/model 對話模擬
                     const systemParts = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
-                    const geminiContents = messages
-                        .filter(m => m.role !== 'system')
-                        .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+                    const geminiContents = [];
 
-                    const geminiBody = { contents: geminiContents };
-                    if (systemParts) geminiBody.systemInstruction = { parts: [{ text: systemParts }] };
-                    geminiBody.generationConfig = { temperature: requestBody.temperature || 0.7, maxOutputTokens: requestBody.max_tokens || 512 };
+                    // 把系統提示詞夾進第一則 user/model 對話
+                    if (systemParts) {
+                        geminiContents.push({ role: 'user', parts: [{ text: `[背景設定]：${systemParts}\n\n請依照上述設定扮演角色並回答接下來的問題。` }] });
+                        geminiContents.push({ role: 'model', parts: [{ text: '好的，我已瞭解設定，請繼續問我問題。' }] });
+                    }
+
+                    // 加入實際對話
+                    messages.filter(m => m.role !== 'system').forEach(m => {
+                        geminiContents.push({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] });
+                    });
+
+                    const geminiBody = {
+                        contents: geminiContents,
+                        generationConfig: {
+                            temperature: requestBody.temperature || 0.7,
+                            maxOutputTokens: requestBody.max_tokens || 512
+                        }
+                    };
 
                     response = await fetch(endpoint, {
                         method: "POST",
