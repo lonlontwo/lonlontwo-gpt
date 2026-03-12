@@ -104,7 +104,7 @@ async function handleUserMessage(text) {
         } else if (data.error) {
             addMessage("❌ API 錯誤：" + (data.error.message || JSON.stringify(data.error)), 'bot');
         } else {
-            addMessage("❌ 收到未知回應，請檢查後台設定。", 'bot');
+            addMessage("❌ 未知回應（偵錯）：" + JSON.stringify(data).substring(0, 300), 'bot');
         }
     } catch (e) {
         typingIndicator.style.display = 'none';
