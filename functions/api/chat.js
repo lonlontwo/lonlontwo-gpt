@@ -143,15 +143,21 @@ export async function onRequestPost(context) {
 
                 data = await response.json();
 
+                // 修正：Gemini 有時回傳陣列格式錯誤 [{error:{...}}]
+                if (Array.isArray(data)) {
+                    data = data[0] || { error: { message: "Gemini 回傳空陣列" } };
+                }
+
+                const errorMsg = data.error?.message || "";
                 const isRateLimited = response.status === 429 ||
-                    (data.error?.message &&
-                        (data.error.message.includes('Rate limit') ||
-                         data.error.message.includes('rate_limit') ||
-                         data.error.message.includes('TPM') ||
-                         data.error.message.includes('RPM')));
+                    errorMsg.includes('Rate limit') ||
+                    errorMsg.includes('rate_limit') ||
+                    errorMsg.includes('TPM') ||
+                    errorMsg.includes('RPM') ||
+                    errorMsg.includes('quota');
 
                 if (response.ok && data.choices?.length > 0) {
-                    console.log(`✅ [${config.activeProvider}] 使用模型: ${model}`);
+                    console.log(`✅ [${activeProviderKey}] 使用模型: ${model}`);
                     break;
                 }
 
@@ -161,8 +167,9 @@ export async function onRequestPost(context) {
                     continue;
                 }
 
-                console.log(`❌ 模型 ${model} 錯誤: ${data.error?.message}`);
-                break;
+                console.log(`❌ 模型 ${model} 錯誤: ${errorMsg}`);
+                lastError = data;
+                continue; // 繼續嘗試下一個 fallback
 
             } catch (e) {
                 console.log(`❌ 模型 ${model} 失敗: ${e.message}`);
@@ -170,7 +177,7 @@ export async function onRequestPost(context) {
             }
         }
 
-        if (!data || (data.error && !data.choices)) {
+        if (!data || (!data.choices && !data.error)) {
             data = lastError || { error: { message: "所有模型都暫時無法使用，請稍後再試。" } };
         }
 
